@@ -66,8 +66,8 @@ docker build -t devops-router:latest -f Dockerfile.router .
 success "devops-router:latest built"
 
 info "Importing images into K3s..."
-docker save devops-playground:latest | sudo env "PATH=$PATH" k3s ctr images import -
-docker save devops-router:latest     | sudo env "PATH=$PATH" k3s ctr images import -
+docker save devops-playground:latest | sudo ctr -n k8s.io images import -
+docker save devops-router:latest     | sudo ctr -n k8s.io images import -
 success "Images imported into K3s"
 
 # ── Namespaces ────────────────────────────────────────────────────────────────

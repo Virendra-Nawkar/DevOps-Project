@@ -100,7 +100,7 @@ success "Docker image built"
 
 # ── Step 6: Import image into K3s ─────────────────────────────────────────────
 info "Importing image into K3s containerd..."
-docker save "${IMAGE_NAME}" | sudo env "PATH=$PATH" k3s ctr images import -
+docker save "${IMAGE_NAME}" | sudo ctr -n k8s.io images import -
 success "Image imported into K3s"
 
 # ── Step 7: Deploy manifests ──────────────────────────────────────────────────
