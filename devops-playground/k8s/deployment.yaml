@@ -1,0 +1,144 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Deployment – DevOps Playground
+#
+# Key DevOps features demonstrated:
+#   • Downward API  → inject pod name/IP/node into env vars
+#   • Resource requests/limits → required for HPA CPU-based scaling
+#   • Liveness probe  → K8s restarts unhealthy pod (test with /chaos/unhealthy)
+#   • Readiness probe → removes pod from service if not ready (/chaos/not-ready)
+#   • Rolling update strategy with maxSurge / maxUnavailable
+#   • Pod anti-affinity → spread pods across nodes
+#   • Topology spread constraints → even distribution
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-playground
+  namespace: devops
+  labels:
+    app: devops-playground
+    version: "1.0.0"
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+spec:
+  replicas: 1                # HPA will manage this after creation
+  selector:
+    matchLabels:
+      app: devops-playground
+
+  # ── Rolling update strategy ──────────────────────────────────────────────
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1            # allow 1 extra pod during update
+      maxUnavailable: 0      # zero downtime rolling update
+
+  template:
+    metadata:
+      labels:
+        app: devops-playground
+        version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "5000"
+        prometheus.io/path:   "/metrics"
+
+    spec:
+      # ── Security context ────────────────────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser:  1000
+        fsGroup:    1000
+
+      # ── Pod anti-affinity (spread across nodes) ──────────────────────────
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: devops-playground
+              topologyKey: kubernetes.io/hostname
+
+      # ── Topology spread (even distribution) ──────────────────────────────
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: devops-playground
+
+      terminationGracePeriodSeconds: 30
+
+      containers:
+      - name: app
+        image: devops-playground:latest
+        imagePullPolicy: IfNotPresent      # use 'Always' with remote registry
+        ports:
+        - containerPort: 5000
+          name: http
+
+        # ── Env from ConfigMap ─────────────────────────────────────────────
+        envFrom:
+        - configMapRef:
+            name: devops-playground-config
+
+        # ── Downward API – inject pod metadata as env vars ─────────────────
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+
+        # ── Resource requests/limits  ──────────────────────────────────────
+        # HPA targets 50% of the REQUEST value, so:
+        #   50% of 200m = 100m CPU triggers scale-up
+        resources:
+          requests:
+            cpu:    "200m"
+            memory: "128Mi"
+          limits:
+            cpu:    "500m"
+            memory: "256Mi"
+
+        # ── Liveness probe (restarts pod if /health returns non-200) ───────
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds:       10
+          failureThreshold:    3
+          timeoutSeconds:      5
+
+        # ── Readiness probe (removes pod from service endpoints) ───────────
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds:       5
+          failureThreshold:    3
+          timeoutSeconds:      5
+
+        # ── Startup probe (gives app time to start before liveness kicks in)
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          failureThreshold:    10
+          periodSeconds:       5

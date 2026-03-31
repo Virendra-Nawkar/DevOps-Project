@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Service – exposes the deployment inside (and optionally outside) the cluster
+# Change type to LoadBalancer for cloud (AWS/GCP/Azure) or use Ingress below
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-playground
+  namespace: devops
+  labels:
+    app: devops-playground
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port:   "5000"
+spec:
+  selector:
+    app: devops-playground
+  type: ClusterIP          # change to NodePort or LoadBalancer as needed
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+    protocol: TCP
+
+---
+# NodePort version – uncomment to access via <NodeIP>:30080 directly
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: devops-playground-nodeport
+#   namespace: devops
+# spec:
+#   selector:
+#     app: devops-playground
+#   type: NodePort
+#   ports:
+#   - port: 80
+#     targetPort: 5000
+#     nodePort: 30080

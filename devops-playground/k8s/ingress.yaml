@@ -1,0 +1,58 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Ingress – route external HTTP traffic to the service
+#
+# Requires nginx ingress controller:
+#   kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+#
+# For Minikube:
+#   minikube addons enable ingress
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devops-playground
+  namespace: devops
+  labels:
+    app: devops-playground
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target:      /
+    nginx.ingress.kubernetes.io/proxy-read-timeout:  "3600"   # SSE needs long timeout
+    nginx.ingress.kubernetes.io/proxy-send-timeout:  "3600"
+    nginx.ingress.kubernetes.io/proxy-buffering:     "off"    # SSE: disable buffering
+    nginx.ingress.kubernetes.io/proxy-http-version:  "1.1"    # SSE: keep-alive
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: devops-playground.local   # add to /etc/hosts for local testing
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: devops-playground
+            port:
+              number: 80
+
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Network Policy – restrict pod-to-pod traffic (zero-trust demo)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: devops-playground-netpol
+  namespace: devops
+spec:
+  podSelector:
+    matchLabels:
+      app: devops-playground
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - ports:
+    - port: 5000
+      protocol: TCP
+  egress:
+  - {}    # allow all outbound (DNS, etc.)

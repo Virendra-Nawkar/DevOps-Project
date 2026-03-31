@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DevOps Playground ⚙️</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --green:    #3fb950;
+    --yellow:   #d29922;
+    --red:      #f85149;
+    --blue:     #58a6ff;
+    --purple:   #bc8cff;
+    --orange:   #ffa657;
+    --teal:     #39d353;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; }
+  header span.tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .tag-k8s  { background: #1a3a6b; color: var(--blue); }
+  .tag-live { background: #1a3a1a; color: var(--green); }
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 1.5s infinite;
+    margin-left: auto;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── Layout ── */
+  main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+  @media(max-width:900px){ .grid-3,.grid-4{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:600px){ .grid-3,.grid-4,.grid-2{ grid-template-columns:1fr; } }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .card h2 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card h2 .icon { font-size: 1rem; }
+  .card .val {
+    font-size: 2.4rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .card .sub { font-size: 0.8rem; color: var(--muted); }
+  .val.green  { color: var(--green); }
+  .val.yellow { color: var(--yellow); }
+  .val.red    { color: var(--red); }
+  .val.blue   { color: var(--blue); }
+  .val.purple { color: var(--purple); }
+  .val.orange { color: var(--orange); }
+
+  /* ── Progress bar ── */
+  .bar-wrap { background: #21262d; border-radius: 4px; height: 8px; margin-top: 10px; overflow: hidden; }
+  .bar { height: 100%; border-radius: 4px; transition: width 0.6s ease, background 0.3s; }
+
+  /* ── Sections ── */
+  .section-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Buttons ── */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  button {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 7px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  button:hover   { opacity: 0.85; }
+  button:active  { transform: scale(0.96); }
+  .btn-green  { background: #1f4d23; color: var(--green); border: 1px solid var(--green); }
+  .btn-red    { background: #4d1f1f; color: var(--red);   border: 1px solid var(--red); }
+  .btn-blue   { background: #1f3a5c; color: var(--blue);  border: 1px solid var(--blue); }
+  .btn-yellow { background: #4d3a1f; color: var(--yellow);border: 1px solid var(--yellow); }
+  .btn-purple { background: #3a1f5c; color: var(--purple);border: 1px solid var(--purple); }
+  .btn-orange { background: #5c3a1f; color: var(--orange);border: 1px solid var(--orange); }
+
+  /* ── Load slider ── */
+  .slider-wrap { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  input[type=range] { flex: 1; accent-color: var(--blue); }
+  .slider-val { font-size: 1rem; font-weight: 700; color: var(--blue); min-width: 60px; }
+
+  /* ── Pod info table ── */
+  .info-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .info-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+  .info-table td { padding: 8px 4px; }
+  .info-table td:first-child { color: var(--muted); width: 40%; }
+  .info-table td:last-child  { font-weight: 600; word-break: break-all; }
+
+  /* ── Badge ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .badge-green  { background: #1a3a1a; color: var(--green); }
+  .badge-red    { background: #3a1a1a; color: var(--red); }
+  .badge-yellow { background: #3a2a1a; color: var(--yellow); }
+
+  /* ── Chart ── */
+  .chart-wrap { position: relative; height: 180px; margin-top: 10px; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    max-width: 340px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.ok   { border-color: var(--green); color: var(--green); }
+  #toast.err  { border-color: var(--red);   color: var(--red); }
+  #toast.warn { border-color: var(--yellow);color: var(--yellow); }
+
+  /* ── Endpoints ref ── */
+  .endpoint-list { list-style: none; }
+  .endpoint-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 0.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .endpoint-list li:last-child { border-bottom: none; }
+  .method {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    min-width: 42px;
+    text-align: center;
+  }
+  .get  { background: #1f4d23; color: var(--green); }
+  .post { background: #1f3a5c; color: var(--blue);  }
+  .path { color: var(--text); font-family: monospace; flex: 1; }
+  .desc { color: var(--muted); font-size: 0.75rem; }
+
+  /* ── Log ── */
+  #log-box {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    height: 150px;
+    overflow-y: auto;
+    padding: 8px;
+    font-family: monospace;
+    font-size: 0.78rem;
+    margin-top: 10px;
+  }
+  .log-line { padding: 2px 0; }
+  .log-line.info  { color: var(--blue); }
+  .log-line.ok    { color: var(--green); }
+  .log-line.warn  { color: var(--yellow); }
+  .log-line.error { color: var(--red); }
+
+  /* ── HPA hint box ── */
+  .hint-box {
+    background: #1a2a3a;
+    border: 1px solid #2a4a6a;
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 0.82rem;
+    color: var(--blue);
+    margin-top: 12px;
+  }
+  .hint-box code {
+    display: block;
+    background: #0d1117;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-top: 6px;
+    color: var(--teal);
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:1.5rem">⚙️</span>
+  <h1>DevOps Playground</h1>
+  <span class="tag tag-k8s">Kubernetes</span>
+  <span class="tag tag-live">Live</span>
+  <div class="live-dot" title="SSE connected"></div>
+</header>
+
+<main>
+
+  <!-- ── Stat cards ── -->
+  <div class="grid-4">
+    <div class="card">
+      <h2><span class="icon">🖥️</span> CPU Usage</h2>
+      <div class="val blue" id="cpu-val">0%</div>
+      <div class="sub">Current pod CPU</div>
+      <div class="bar-wrap"><div class="bar" id="cpu-bar" style="width:0%;background:var(--blue)"></div></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">🧠</span> Memory</h2>
+      <div class="val purple" id="mem-val">0%</div>
+      <div class="sub">RAM used</div>
+      <div class="bar-wrap"><div class="bar" id="mem-bar" style="width:0%;background:var(--purple)"></div></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">📨</span> Requests</h2>
+      <div class="val orange" id="req-val">0</div>
+      <div class="sub">Total since start</div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">⏱️</span> Uptime</h2>
+      <div class="val green" id="uptime-val">0s</div>
+      <div class="sub">Pod running since</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+
+    <!-- ── CPU real-time chart ── -->
+    <div class="card">
+      <h2><span class="icon">📈</span> Real-time CPU Chart</h2>
+      <div class="chart-wrap">
+        <canvas id="cpuChart"></canvas>
+      </div>
+    </div>
+
+    <!-- ── Memory chart ── -->
+    <div class="card">
+      <h2><span class="icon">📉</span> Real-time Memory Chart</h2>
+      <div class="chart-wrap">
+        <canvas id="memChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="grid-2">
+
+    <!-- ── Load Generator ── -->
+    <div class="card">
+      <h2><span class="icon">🔥</span> Load Generator — Trigger HPA Scaling</h2>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">
+        Spawn CPU stress workers to push CPU above HPA threshold (50%).
+        Kubernetes HPA will scale up pods automatically.
+      </p>
+      <label style="font-size:0.8rem;color:var(--muted)">Workers to add per click</label>
+      <div class="slider-wrap">
+        <input type="range" id="worker-slider" min="1" max="8" value="2"
+               oninput="document.getElementById('worker-label').textContent=this.value+' workers'">
+        <span class="slider-val" id="worker-label">2 workers</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-green" onclick="addLoad()">🚀 Add Load</button>
+        <button class="btn-red"   onclick="stopLoad()">🛑 Stop All Load</button>
+      </div>
+      <div style="margin-top:14px;font-size:0.82rem;">
+        Active CPU workers: <strong id="worker-count" style="color:var(--orange)">0</strong>
+      </div>
+      <div class="hint-box">
+        💡 Watch pod count with:
+        <code>kubectl get hpa devops-playground -n devops -w</code>
+        <code>kubectl get pods -n devops -w</code>
+      </div>
+    </div>
+
+    <!-- ── Chaos Engineering ── -->
+    <div class="card">
+      <h2><span class="icon">💥</span> Chaos Engineering</h2>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">
+        Simulate failures to test Kubernetes self-healing, probe behavior, and circuit breakers.
+      </p>
+      <div class="btn-row">
+        <button class="btn-red"    onclick="chaos('unhealthy')" title="Liveness probe fails → K8s restarts pod">❌ Kill Liveness</button>
+        <button class="btn-green"  onclick="chaos('healthy')"  title="Restore liveness">✅ Restore Health</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-yellow" onclick="chaos('not-ready')" title="Readiness fails → removed from Service">⚠️ Kill Readiness</button>
+        <button class="btn-green"  onclick="chaos('ready')"     title="Restore readiness">✅ Restore Ready</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn-orange" onclick="chaos('error')"     title="Trigger a 500 error">💣 Trigger Error</button>
+        <button class="btn-purple" onclick="setDelay(500)"      title="Add 500ms latency">🐢 Add 500ms Delay</button>
+        <button class="btn-blue"   onclick="setDelay(0)"        title="Remove latency">⚡ Remove Delay</button>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+        Liveness: <span id="health-badge"></span>
+        &nbsp; Readiness: <span id="ready-badge"></span>
+        &nbsp; Delay: <span id="delay-badge" style="color:var(--orange)">0ms</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="grid-2">
+
+    <!-- ── Pod Identity ── -->
+    <div class="card">
+      <h2><span class="icon">🏷️</span> Pod Identity</h2>
+      <table class="info-table" id="pod-table">
+        <tr><td>Pod Name</td><td id="i-pod-name">—</td></tr>
+        <tr><td>Pod IP</td><td id="i-pod-ip">—</td></tr>
+        <tr><td>Node</td><td id="i-node">—</td></tr>
+        <tr><td>Namespace</td><td id="i-ns">—</td></tr>
+        <tr><td>App Version</td><td id="i-ver">—</td></tr>
+        <tr><td>Hostname</td><td id="i-host">—</td></tr>
+        <tr><td>Memory Used</td><td id="i-mem">—</td></tr>
+        <tr><td>Disk Used</td><td id="i-disk">—</td></tr>
+        <tr><td>Total Requests</td><td id="i-req">—</td></tr>
+        <tr><td>Total Errors</td><td id="i-err">—</td></tr>
+      </table>
+    </div>
+
+    <!-- ── Activity Log ── -->
+    <div class="card">
+      <h2><span class="icon">📋</span> Activity Log</h2>
+      <p style="font-size:0.8rem;color:var(--muted)">Real-time events from this pod</p>
+      <div id="log-box"></div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button class="btn-blue" onclick="document.getElementById('log-box').innerHTML=''">🗑️ Clear Log</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── API Endpoints reference ── -->
+  <div class="card" style="margin-bottom:20px;">
+    <h2><span class="icon">🔌</span> API Endpoints Reference</h2>
+    <div class="grid-2" style="gap:0;margin-bottom:0;">
+      <ul class="endpoint-list">
+        <li><span class="method get">GET</span> <span class="path">/</span> <span class="desc">This dashboard</span></li>
+        <li><span class="method get">GET</span> <span class="path">/health</span> <span class="desc">Liveness probe (K8s)</span></li>
+        <li><span class="method get">GET</span> <span class="path">/ready</span> <span class="desc">Readiness probe (K8s)</span></li>
+        <li><span class="method get">GET</span> <span class="path">/metrics</span> <span class="desc">Prometheus metrics scrape</span></li>
+        <li><span class="method get">GET</span> <span class="path">/info</span> <span class="desc">Full pod info JSON</span></li>
+        <li><span class="method get">GET</span> <span class="path">/stream</span> <span class="desc">SSE live metrics stream</span></li>
+        <li><span class="method get">GET</span> <span class="path">/load/status</span> <span class="desc">Current load workers</span></li>
+      </ul>
+      <ul class="endpoint-list">
+        <li><span class="method post">POST</span> <span class="path">/load/start</span> <span class="desc">Start CPU stress workers</span></li>
+        <li><span class="method post">POST</span> <span class="path">/load/stop</span> <span class="desc">Stop all load workers</span></li>
+        <li><span class="method post">POST</span> <span class="path">/chaos/unhealthy</span> <span class="desc">Fail liveness probe</span></li>
+        <li><span class="method post">POST</span> <span class="path">/chaos/healthy</span> <span class="desc">Restore liveness</span></li>
+        <li><span class="method post">POST</span> <span class="path">/chaos/not-ready</span> <span class="desc">Fail readiness probe</span></li>
+        <li><span class="method post">POST</span> <span class="path">/chaos/ready</span> <span class="desc">Restore readiness</span></li>
+        <li><span class="method post">POST</span> <span class="path">/chaos/delay</span> <span class="desc">Inject latency {"ms":500}</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── K8s Quick Commands ── -->
+  <div class="card">
+    <h2><span class="icon">🧰</span> Kubernetes Quick Commands</h2>
+    <div class="grid-3" style="gap:12px;margin-bottom:0;">
+      <div>
+        <div class="section-title">Scaling</div>
+        <div class="hint-box" style="margin-top:0;">
+          Watch HPA live:
+          <code>kubectl get hpa -n devops -w</code>
+          Manual scale:
+          <code>kubectl scale deploy devops-playground --replicas=5 -n devops</code>
+          View pod events:
+          <code>kubectl describe pod -n devops -l app=devops-playground</code>
+        </div>
+      </div>
+      <div>
+        <div class="section-title">Logs & Debugging</div>
+        <div class="hint-box" style="margin-top:0;">
+          Tail logs all pods:
+          <code>kubectl logs -l app=devops-playground -n devops -f</code>
+          Exec into pod:
+          <code>kubectl exec -it &lt;pod&gt; -n devops -- bash</code>
+          Top pods:
+          <code>kubectl top pods -n devops</code>
+        </div>
+      </div>
+      <div>
+        <div class="section-title">Rolling Updates</div>
+        <div class="hint-box" style="margin-top:0;">
+          Update image:
+          <code>kubectl set image deploy/devops-playground app=devops-playground:v2 -n devops</code>
+          Rollback:
+          <code>kubectl rollout undo deploy/devops-playground -n devops</code>
+          Status:
+          <code>kubectl rollout status deploy/devops-playground -n devops</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ── Charts setup ─────────────────────────────────────────────────────────────
+const MAX_POINTS = 30;
+const labels = Array(MAX_POINTS).fill('');
+
+function makeChart(id, label, color) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [...labels],
+      datasets: [{
+        label,
+        data: Array(MAX_POINTS).fill(0),
+        borderColor: color,
+        backgroundColor: color + '22',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      scales: {
+        x: { display: false },
+        y: {
+          min: 0, max: 100,
+          grid: { color: '#21262d' },
+          ticks: { color: '#8b949e', callback: v => v + '%' }
+        }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+const cpuChart = makeChart('cpuChart', 'CPU %',    '#58a6ff');
+const memChart = makeChart('memChart', 'Memory %', '#bc8cff');
+
+function pushChart(chart, value) {
+  chart.data.datasets[0].data.push(value);
+  chart.data.datasets[0].data.shift();
+  chart.update('none');
+}
+
+// ── SSE stream ───────────────────────────────────────────────────────────────
+const es = new EventSource('/stream');
+es.onmessage = e => {
+  const d = JSON.parse(e.data);
+  // Metric cards
+  setCPU(d.cpu);
+  setMem(d.memory);
+  document.getElementById('req-val').textContent    = d.requests.toLocaleString();
+  document.getElementById('uptime-val').textContent = fmtUptime(d.uptime);
+  document.getElementById('worker-count').textContent = d.workers;
+
+  // Charts
+  pushChart(cpuChart, d.cpu);
+  pushChart(memChart, d.memory);
+
+  // Badges
+  document.getElementById('health-badge').innerHTML = d.health_ok
+    ? '<span class="badge badge-green">✅ Healthy</span>'
+    : '<span class="badge badge-red">❌ Failing</span>';
+  document.getElementById('ready-badge').innerHTML = d.ready_ok
+    ? '<span class="badge badge-green">✅ Ready</span>'
+    : '<span class="badge badge-yellow">⚠️ Not Ready</span>';
+  document.getElementById('delay-badge').textContent = d.delay_ms + 'ms';
+};
+es.onerror = () => addLog('SSE connection lost – reconnecting…', 'warn');
+es.onopen  = ()  => addLog('SSE stream connected ✓', 'ok');
+
+// ── Periodic pod info ─────────────────────────────────────────────────────────
+async function fetchInfo() {
+  try {
+    const r = await fetch('/info');
+    const d = await r.json();
+    document.getElementById('i-pod-name').textContent = d.pod_name;
+    document.getElementById('i-pod-ip').textContent   = d.pod_ip;
+    document.getElementById('i-node').textContent     = d.node_name;
+    document.getElementById('i-ns').textContent       = d.namespace;
+    document.getElementById('i-ver').textContent      = d.app_version;
+    document.getElementById('i-host').textContent     = d.hostname;
+    document.getElementById('i-mem').textContent      = `${d.memory_used_mb} MB / ${d.memory_total_mb} MB`;
+    document.getElementById('i-disk').textContent     = `${d.disk_used_gb} GB / ${d.disk_total_gb} GB`;
+    document.getElementById('i-req').textContent      = d.request_count;
+    document.getElementById('i-err').textContent      = d.error_count;
+  } catch (err) {
+    addLog('Failed to fetch pod info: ' + err.message, 'error');
+  }
+}
+fetchInfo();
+setInterval(fetchInfo, 5000);
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function setCPU(v) {
+  document.getElementById('cpu-val').textContent = v + '%';
+  const bar = document.getElementById('cpu-bar');
+  bar.style.width = v + '%';
+  bar.style.background = v > 80 ? 'var(--red)' : v > 50 ? 'var(--yellow)' : 'var(--blue)';
+}
+function setMem(v) {
+  document.getElementById('mem-val').textContent = v + '%';
+  const bar = document.getElementById('mem-bar');
+  bar.style.width = v + '%';
+  bar.style.background = v > 85 ? 'var(--red)' : v > 65 ? 'var(--yellow)' : 'var(--purple)';
+}
+function fmtUptime(s) {
+  if (s < 60)   return s + 's';
+  if (s < 3600) return Math.floor(s/60) + 'm ' + (s%60) + 's';
+  return Math.floor(s/3600) + 'h ' + Math.floor((s%3600)/60) + 'm';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+// ── Activity log ─────────────────────────────────────────────────────────────
+function addLog(msg, type='info') {
+  const box  = document.getElementById('log-box');
+  const time = new Date().toLocaleTimeString();
+  const div  = document.createElement('div');
+  div.className = 'log-line ' + type;
+  div.textContent = `[${time}] ${msg}`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  // Keep at most 200 entries
+  while (box.children.length > 200) box.removeChild(box.firstChild);
+}
+
+// ── Load API calls ─────────────────────────────────────────────────────────────
+async function addLoad() {
+  const w = parseInt(document.getElementById('worker-slider').value);
+  try {
+    const r = await fetch('/load/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workers: w }),
+    });
+    const d = await r.json();
+    toast(`🚀 ${d.message}`, 'ok');
+    addLog(`Load started: ${d.added_workers} workers added (total: ${d.total_workers})`, 'warn');
+  } catch (err) {
+    toast('Failed to start load: ' + err.message, 'err');
+  }
+}
+
+async function stopLoad() {
+  try {
+    const r = await fetch('/load/stop', { method: 'POST' });
+    const d = await r.json();
+    toast(`🛑 ${d.message}`, 'ok');
+    addLog('All load workers stopped. HPA will scale down after cool-down period.', 'ok');
+  } catch (err) {
+    toast('Failed to stop load: ' + err.message, 'err');
+  }
+}
+
+// ── Chaos API calls ────────────────────────────────────────────────────────────
+async function chaos(action) {
+  const msgs = {
+    'unhealthy':  '❌ Liveness probe is now FAILING — K8s will restart this pod!',
+    'healthy':    '✅ Liveness probe restored.',
+    'not-ready':  '⚠️ Readiness probe FAILING — pod removed from Service!',
+    'ready':      '✅ Readiness probe restored.',
+    'error':      '💣 500 error triggered!',
+  };
+  const types = {
+    'unhealthy':'err','healthy':'ok','not-ready':'warn','ready':'ok','error':'err'
+  };
+  try {
+    await fetch('/chaos/' + action, { method: action === 'error' ? 'GET' : 'POST' });
+    toast(msgs[action] || action, types[action] || 'ok');
+    addLog('CHAOS: ' + action, action.includes('un') || action.includes('not') ? 'error' : 'ok');
+  } catch (err) {
+    toast('Chaos call failed: ' + err.message, 'err');
+  }
+}
+
+async function setDelay(ms) {
+  try {
+    await fetch('/chaos/delay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ms }),
+    });
+    toast(ms ? `🐢 Added ${ms}ms artificial delay` : '⚡ Delay removed', ms ? 'warn' : 'ok');
+    addLog(`Latency injection: ${ms}ms`, ms ? 'warn' : 'ok');
+  } catch (err) {
+    toast('Failed: ' + err.message, 'err');
+  }
+}
+</script>
+</body>
+</html>

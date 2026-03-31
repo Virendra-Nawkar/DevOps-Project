@@ -1,0 +1,15 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Scrape the DevOps Playground app
+  - job_name: 'devops-playground'
+    static_configs:
+      - targets: ['app:5000']
+    metrics_path: /metrics
+
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

@@ -1,0 +1,69 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Horizontal Pod Autoscaler
+#
+# Scaling behaviour:
+#   • Triggers:  CPU > 50%  OR  Memory > 70%
+#   • Min pods:  1
+#   • Max pods:  10
+#   • Scale-up:  fast  (30s stabilisation window, +2 pods per step)
+#   • Scale-down: slow (300s stabilisation window, -1 pod per step)
+#
+# Requires metrics-server in cluster:
+#   kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+#
+# Watch HPA in action:
+#   kubectl get hpa devops-playground -n devops -w
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: devops-playground
+  namespace: devops
+  labels:
+    app: devops-playground
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: devops-playground
+
+  minReplicas: 1
+  maxReplicas: 10
+
+  metrics:
+  # ── CPU-based scaling (primary trigger) ─────────────────────────────────
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50    # scale up when CPU > 50% of request (200m)
+
+  # ── Memory-based scaling (secondary trigger) ─────────────────────────────
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70    # scale up when memory > 70% of request
+
+  behavior:
+    # ── Scale UP behaviour ────────────────────────────────────────────────
+    scaleUp:
+      stabilizationWindowSeconds: 30       # wait 30s before scaling up again
+      policies:
+      - type: Pods
+        value: 2                           # add up to 2 pods per step
+        periodSeconds: 30
+      - type: Percent
+        value: 100                         # or double pods
+        periodSeconds: 30
+      selectPolicy: Max                    # use whichever adds more pods
+
+    # ── Scale DOWN behaviour ──────────────────────────────────────────────
+    scaleDown:
+      stabilizationWindowSeconds: 300      # wait 5 min before scaling down
+      policies:
+      - type: Pods
+        value: 1                           # remove 1 pod at a time
+        periodSeconds: 60
