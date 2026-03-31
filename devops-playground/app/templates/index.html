@@ -208,6 +208,65 @@
   .path { color: var(--text); font-family: monospace; flex: 1; }
   .desc { color: var(--muted); font-size: 0.75rem; }
 
+  /* ── Health Board ── */
+  .health-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top:10px; }
+  @media(max-width:700px){ .health-grid{ grid-template-columns:repeat(2,1fr); } }
+  .svc-card {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.4s;
+  }
+  .svc-card.healthy  { border-color: var(--green); }
+  .svc-card.unhealthy{ border-color: var(--red);   }
+  .svc-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .svc-dot.healthy   { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1.5s infinite; }
+  .svc-dot.unhealthy { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+  .svc-dot.checking  { background: var(--yellow);}
+  .svc-name  { font-size:0.82rem; font-weight:600; }
+  .svc-ms    { font-size:0.72rem; color:var(--muted); }
+
+  /* ── Pod Visualizer ── */
+  .pods-grid { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; min-height:80px; }
+  .pod-card {
+    background: #0d1117;
+    border: 1px solid var(--blue);
+    border-radius: 8px;
+    padding: 12px 16px;
+    min-width: 160px;
+    animation: pod-in 0.4s ease;
+  }
+  .pod-card.demo  { border-color: var(--purple); opacity:0.7; }
+  .pod-card.dying { animation: pod-out 0.5s ease forwards; }
+  @keyframes pod-in  { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+  @keyframes pod-out { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.7)} }
+  .pod-name  { font-size:0.75rem; font-weight:700; color:var(--blue); word-break:break-all; }
+  .pod-cpu-bar { margin-top:6px; }
+  .pod-demo-label { font-size:0.65rem; color:var(--purple); margin-top:2px; }
+
+  /* ── Blue/Green ── */
+  .bg-container { display:grid; grid-template-columns:1fr 180px 1fr; gap:16px; align-items:start; margin-top:14px; }
+  @media(max-width:700px){ .bg-container{ grid-template-columns:1fr; } }
+  .bg-panel { border-radius:10px; padding:18px; text-align:center; }
+  .bg-panel.blue-panel  { background:#0a1628; border:2px solid var(--blue); }
+  .bg-panel.green-panel { background:#0a2814; border:2px solid var(--green); }
+  .bg-panel h3 { font-size:1rem; font-weight:700; margin-bottom:10px; }
+  .blue-panel  h3 { color:var(--blue);  }
+  .green-panel h3 { color:var(--green); }
+  .bg-count { font-size:2.2rem; font-weight:700; line-height:1; }
+  .bg-version { font-size:0.75rem; color:var(--muted); margin-top:4px; }
+  .bg-lat { font-size:0.78rem; color:var(--muted); margin-top:6px; }
+  .bg-pct { font-size:1.4rem; font-weight:700; margin:8px 0; }
+  .bg-center { text-align:center; }
+  .bg-center label { font-size:0.75rem; color:var(--muted); display:block; margin-bottom:4px; }
+  .bg-slider { width:100%; accent-color:var(--blue); }
+  .bg-deploy-log { margin-top:10px; font-size:0.75rem; }
+  .log-entry { padding:4px 0; border-bottom:1px solid var(--border); color:var(--muted); }
+
   /* ── Log ── */
   #log-box {
     background: #0d1117;
@@ -418,6 +477,107 @@
     </div>
   </div>
 
+  <!-- ── 1. Service Health Board ── -->
+  <div class="card" style="margin-bottom:20px;">
+    <h2><span class="icon">🟢</span> Service Health Board
+      <span id="health-last" style="font-size:0.7rem;color:var(--muted);margin-left:auto;font-weight:400;text-transform:none;letter-spacing:0;">auto-refresh every 10s</span>
+    </h2>
+    <div class="health-grid" id="health-grid">
+      <div class="svc-card"><div class="svc-dot checking"></div><div><div class="svc-name">Checking...</div></div></div>
+    </div>
+  </div>
+
+  <!-- ── 2. Pod Scaling Visualizer ── -->
+  <div class="card" style="margin-bottom:20px;">
+    <h2><span class="icon">🫛</span> Pod Scaling Visualizer</h2>
+    <p style="font-size:0.8rem;color:var(--muted);margin-bottom:6px;">
+      Real pods come from Prometheus. Use <strong>Add Load</strong> above then watch pods scale in Kubernetes.
+      Click <strong>Demo Scale</strong> to see the animation locally.
+    </p>
+    <div class="pods-grid" id="pods-grid">
+      <div style="color:var(--muted);font-size:0.82rem;align-self:center;">Loading pods…</div>
+    </div>
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn-purple" onclick="demoPodAdd()">➕ Demo Scale Up</button>
+      <button class="btn-red"    onclick="demoPodRemove()">➖ Demo Scale Down</button>
+      <button class="btn-blue"   onclick="fetchPods()">🔄 Refresh Real Pods</button>
+    </div>
+    <div style="margin-top:10px;font-size:0.78rem;color:var(--muted);">
+      Real pods: <strong id="real-pod-count" style="color:var(--blue)">1</strong> &nbsp;|&nbsp;
+      Demo pods: <strong id="demo-pod-count" style="color:var(--purple)">0</strong>
+    </div>
+  </div>
+
+  <!-- ── 3. Blue/Green Deployment ── -->
+  <div class="card" style="margin-bottom:20px;">
+    <h2><span class="icon">🔀</span> Blue / Green Deployment
+      <span style="font-size:0.7rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;margin-left:8px;">
+        Route live on port :85
+      </span>
+    </h2>
+    <p style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;">
+      Drag the slider to shift traffic. Blue = <strong>v1.0.0</strong>, Green = <strong>v2.0.0</strong>.
+      Access <code style="color:var(--teal)">http://52.173.127.47:85</code> and watch which version serves each request.
+    </p>
+    <div class="bg-container">
+
+      <!-- Blue side -->
+      <div class="bg-panel blue-panel">
+        <h3>🔵 Blue (v1.0.0)</h3>
+        <div class="bg-count" id="bg-blue-count" style="color:var(--blue)">0</div>
+        <div class="bg-version">requests served</div>
+        <div class="bg-lat">Avg latency: <strong id="bg-blue-lat">—</strong></div>
+        <div style="margin-top:12px;">
+          <button class="btn-blue" style="width:100%;justify-content:center;" onclick="setWeight(100)">
+            ← Send ALL to Blue
+          </button>
+        </div>
+      </div>
+
+      <!-- Center slider -->
+      <div class="bg-center">
+        <label>Blue %</label>
+        <div class="bg-pct" id="bg-pct-label" style="color:var(--blue)">100%</div>
+        <input type="range" class="bg-slider" id="bg-slider" min="0" max="100" value="100"
+               oninput="onSliderMove(this.value)" onchange="applyWeight(this.value)">
+        <div class="bg-pct" id="bg-green-pct-label" style="color:var(--green);font-size:1rem;">0%</div>
+        <label style="margin-top:6px;">Green %</label>
+        <div class="btn-row" style="margin-top:14px;justify-content:center;">
+          <button class="btn-yellow" onclick="setWeight(50)">50 / 50</button>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn-green" style="width:100%;justify-content:center;" onclick="setWeight(0)">
+            Send ALL to Green →
+          </button>
+        </div>
+        <button class="btn-blue" style="width:100%;margin-top:8px;justify-content:center;" onclick="resetBGCounts()">
+          🔄 Reset Counts
+        </button>
+      </div>
+
+      <!-- Green side -->
+      <div class="bg-panel green-panel">
+        <h3>🟢 Green (v2.0.0)</h3>
+        <div class="bg-count" id="bg-green-count" style="color:var(--green)">0</div>
+        <div class="bg-version">requests served</div>
+        <div class="bg-lat">Avg latency: <strong id="bg-green-lat">—</strong></div>
+        <div style="margin-top:12px;">
+          <button class="btn-green" style="width:100%;justify-content:center;" onclick="setWeight(0)">
+            Send ALL to Green →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deploy log -->
+    <div style="margin-top:16px;">
+      <div class="section-title">Deployment Log</div>
+      <div id="bg-deploy-log" class="bg-deploy-log">
+        <div class="log-entry" style="color:var(--muted)">No deployments yet…</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Live Alerts Panel ── -->
   <div class="card" style="margin-bottom:20px;">
     <h2><span class="icon">🚨</span> Live Alerts <span id="alert-count" style="color:var(--red);margin-left:6px;"></span></h2>
@@ -611,6 +771,193 @@ function addLog(msg, type='info') {
   // Keep at most 200 entries
   while (box.children.length > 200) box.removeChild(box.firstChild);
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// 1. SERVICE HEALTH BOARD
+// ══════════════════════════════════════════════════════════════════════════
+async function fetchHealth() {
+  try {
+    const r = await fetch('/services/health');
+    const services = await r.json();
+    const grid = document.getElementById('health-grid');
+    grid.innerHTML = services.map(s => `
+      <div class="svc-card ${s.status}">
+        <div class="svc-dot ${s.status}"></div>
+        <div style="flex:1;min-width:0;">
+          <div class="svc-name">${s.icon} ${s.name}</div>
+          <div class="svc-ms">${s.status === 'healthy'
+            ? `${s.response_ms}ms`
+            : `<span style="color:var(--red)">DOWN</span>`}
+          </div>
+        </div>
+      </div>`).join('');
+    const now = new Date().toLocaleTimeString();
+    document.getElementById('health-last').textContent = `last checked ${now}`;
+    const down = services.filter(s => s.status !== 'healthy').length;
+    if (down) addLog(`Health check: ${down} service(s) unhealthy`, 'warn');
+  } catch (e) {
+    addLog('Health board fetch failed: ' + e.message, 'error');
+  }
+}
+fetchHealth();
+setInterval(fetchHealth, 10000);
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// 2. POD SCALING VISUALIZER
+// ══════════════════════════════════════════════════════════════════════════
+let demoPods = [];
+let demoPodCounter = 0;
+
+function renderPods(realPods) {
+  const grid = document.getElementById('pods-grid');
+  let html = '';
+
+  // Real pods
+  realPods.forEach(p => {
+    const cpuColor = p.cpu > 80 ? 'var(--red)' : p.cpu > 50 ? 'var(--yellow)' : 'var(--green)';
+    const barW = Math.min(100, p.cpu);
+    html += `
+      <div class="pod-card" id="pod-${p.pod_name.replace(/[^a-z0-9]/gi,'-')}">
+        <div class="pod-name">📦 ${p.pod_name}</div>
+        <div class="pod-cpu-bar">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:3px;">CPU: <strong style="color:${cpuColor}">${p.cpu}%</strong></div>
+          <div class="bar-wrap"><div class="bar" style="width:${barW}%;background:${cpuColor}"></div></div>
+        </div>
+        ${p.source === 'self' ? '<div class="pod-demo-label">📍 current pod</div>' : ''}
+      </div>`;
+  });
+
+  // Demo pods
+  demoPods.forEach(d => {
+    const cpu = Math.floor(Math.random() * 40) + 10;
+    html += `
+      <div class="pod-card demo" id="demo-pod-${d.id}">
+        <div class="pod-name" style="color:var(--purple)">📦 ${d.name}</div>
+        <div class="pod-cpu-bar">
+          <div style="font-size:0.72rem;color:var(--muted);margin-bottom:3px;">CPU: <strong style="color:var(--purple)">${cpu}%</strong></div>
+          <div class="bar-wrap"><div class="bar" style="width:${cpu}%;background:var(--purple)"></div></div>
+        </div>
+        <div class="pod-demo-label">🎭 simulated pod</div>
+      </div>`;
+  });
+
+  grid.innerHTML = html || '<div style="color:var(--muted);font-size:0.82rem;">No pods found</div>';
+  document.getElementById('real-pod-count').textContent = realPods.length;
+  document.getElementById('demo-pod-count').textContent = demoPods.length;
+}
+
+async function fetchPods() {
+  try {
+    const r = await fetch('/pods');
+    const d = await r.json();
+    renderPods(d.pods);
+  } catch (e) {
+    addLog('Pod fetch failed: ' + e.message, 'error');
+  }
+}
+fetchPods();
+setInterval(fetchPods, 8000);
+
+function demoPodAdd() {
+  demoPodCounter++;
+  const id   = demoPodCounter;
+  const name = `devops-pod-${Math.random().toString(36).slice(2,7)}`;
+  demoPods.push({ id, name });
+  fetchPods();
+  addLog(`Demo scale-up: pod "${name}" scheduled`, 'ok');
+  toast(`🟣 Demo pod "${name}" created`, 'ok');
+}
+
+function demoPodRemove() {
+  if (!demoPods.length) { toast('No demo pods to remove', 'warn'); return; }
+  const removed = demoPods.pop();
+  const el = document.getElementById(`demo-pod-${removed.id}`);
+  if (el) { el.classList.add('dying'); setTimeout(() => fetchPods(), 500); }
+  else fetchPods();
+  addLog(`Demo scale-down: pod "${removed.name}" terminated`, 'warn');
+  toast(`🛑 Demo pod "${removed.name}" removed`, 'warn');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════
+// 3. BLUE / GREEN DEPLOYMENT
+// ══════════════════════════════════════════════════════════════════════════
+function onSliderMove(val) {
+  document.getElementById('bg-pct-label').textContent       = val + '%';
+  document.getElementById('bg-green-pct-label').textContent = (100 - val) + '%';
+}
+
+async function applyWeight(val) {
+  const blue = parseInt(val);
+  try {
+    const r = await fetch('/bluegreen/weight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ blue, message: `Slider moved to Blue:${blue}% Green:${100-blue}%` }),
+    });
+    const d = await r.json();
+    if (d.error) { toast('Router not running – start docker compose', 'warn'); return; }
+    toast(`🔀 Traffic: ${blue}% Blue → ${100-blue}% Green`, 'ok');
+    addLog(`Blue/Green weight set: Blue ${blue}% | Green ${100-blue}%`, 'ok');
+    fetchBGStatus();
+  } catch (e) {
+    toast('Router unreachable – is docker compose running?', 'warn');
+  }
+}
+
+function setWeight(blue) {
+  document.getElementById('bg-slider').value = blue;
+  onSliderMove(blue);
+  applyWeight(blue);
+}
+
+async function fetchBGStatus() {
+  try {
+    const r = await fetch('/bluegreen/status');
+    const d = await r.json();
+    if (d.error && !d.counts) return;
+
+    document.getElementById('bg-blue-count').textContent  = d.counts?.blue  ?? 0;
+    document.getElementById('bg-green-count').textContent = d.counts?.green ?? 0;
+    document.getElementById('bg-blue-lat').textContent    = d.avg_latency?.blue  ? d.avg_latency.blue  + 'ms' : '—';
+    document.getElementById('bg-green-lat').textContent   = d.avg_latency?.green ? d.avg_latency.green + 'ms' : '—';
+
+    // Sync slider if different
+    const slider = document.getElementById('bg-slider');
+    if (slider && Math.abs(parseInt(slider.value) - d.blue) > 2) {
+      slider.value = d.blue;
+      onSliderMove(d.blue);
+    }
+
+    // Render deploy log
+    if (d.deploy_log?.length) {
+      const logDiv = document.getElementById('bg-deploy-log');
+      logDiv.innerHTML = [...d.deploy_log].reverse().map(e => `
+        <div class="log-entry">
+          <span style="color:var(--muted)">${new Date(e.timestamp).toLocaleTimeString()}</span>
+          &nbsp;→&nbsp;
+          <span style="color:var(--blue)">Blue ${e.to.blue}%</span>
+          &nbsp;/&nbsp;
+          <span style="color:var(--green)">Green ${e.to.green}%</span>
+          &nbsp;— ${e.message}
+        </div>`).join('');
+    }
+  } catch (_) {}
+}
+
+async function resetBGCounts() {
+  try {
+    await fetch('http://' + location.hostname + ':85/router/reset', { method: 'POST' });
+    toast('🔄 Counts reset', 'ok');
+    fetchBGStatus();
+  } catch (_) {
+    toast('Router not reachable', 'warn');
+  }
+}
+
+fetchBGStatus();
+setInterval(fetchBGStatus, 5000);
 
 // ── Alerts polling ───────────────────────────────────────────────────────────
 const SEV_COLOR = { critical: 'var(--red)', warning: 'var(--yellow)', info: 'var(--blue)' };

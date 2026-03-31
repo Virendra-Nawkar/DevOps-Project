@@ -110,6 +110,74 @@ services:
       - devops-net
     restart: unless-stopped
 
+  # ── Blue App (v1.0.0) – internal only, accessed via router ──────────────
+  app-blue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: devops-playground:latest
+    container_name: devops-app-blue
+    environment:
+      POD_NAME:    "blue-pod"
+      NAMESPACE:   "local"
+      NODE_NAME:   "docker-desktop"
+      APP_VERSION: "1.0.0"
+      APP_COLOR:   "blue"
+    networks:
+      - devops-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Green App (v2.0.0) – internal only, accessed via router ──────────────
+  app-green:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: devops-playground:latest
+    container_name: devops-app-green
+    environment:
+      POD_NAME:    "green-pod"
+      NAMESPACE:   "local"
+      NODE_NAME:   "docker-desktop"
+      APP_VERSION: "2.0.0"
+      APP_COLOR:   "green"
+    networks:
+      - devops-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Blue/Green Router – traffic splitter on port 85 ───────────────────────
+  router:
+    build:
+      context: .
+      dockerfile: Dockerfile.router
+    container_name: devops-router
+    ports:
+      - "85:5001"
+    environment:
+      BLUE_URL:  http://app-blue:5000
+      GREEN_URL: http://app-green:5000
+    depends_on:
+      - app-blue
+      - app-green
+    networks:
+      - devops-net
+    restart: unless-stopped
+
   # ── Alertmanager ──────────────────────────────────────────────────────────
   alertmanager:
     image: prom/alertmanager:v0.27.0

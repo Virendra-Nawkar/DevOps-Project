@@ -282,6 +282,99 @@ def stream():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  Service Health Board – checks every container in the stack
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route("/services/health")
+def services_health():
+    import urllib.request as ur
+    services = [
+        {"name": "App (self)",   "url": "http://localhost:5000/health",    "icon": "⚙️"},
+        {"name": "Nginx LB",     "url": "http://nginx:80",                 "icon": "🔀"},
+        {"name": "Prometheus",   "url": "http://prometheus:9090/-/healthy","icon": "📊"},
+        {"name": "Grafana",      "url": "http://grafana:3000/api/health",  "icon": "📈"},
+        {"name": "Alertmanager", "url": "http://alertmanager:9093/-/healthy","icon":"🚨"},
+        {"name": "Loki",         "url": "http://loki:3100/ready",          "icon": "📋"},
+        {"name": "Router",       "url": "http://router:5001/router/health","icon": "🔵"},
+    ]
+    results = []
+    for svc in services:
+        t0 = time.time()
+        try:
+            resp = ur.urlopen(svc["url"], timeout=2)
+            ms   = round((time.time() - t0) * 1000, 1)
+            results.append({**svc, "status": "healthy", "response_ms": ms, "code": resp.status})
+        except Exception as e:
+            ms = round((time.time() - t0) * 1000, 1)
+            results.append({**svc, "status": "unhealthy", "response_ms": ms, "error": str(e)[:60]})
+    return jsonify(results)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Pod Visualizer – real pods from Prometheus, falls back to self
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route("/pods")
+def pods():
+    import urllib.request as ur
+    try:
+        url  = "http://prometheus:9090/api/v1/query?query=app_cpu_usage_percent"
+        resp = ur.urlopen(url, timeout=2)
+        data = json.loads(resp.read())
+        pods_list = [
+            {
+                "pod_name": r["metric"].get("pod", f"pod-{i}"),
+                "cpu":      round(float(r["value"][1]), 1),
+                "source":   "prometheus",
+            }
+            for i, r in enumerate(data.get("data", {}).get("result", []))
+        ]
+        if pods_list:
+            return jsonify({"pods": pods_list, "count": len(pods_list), "source": "prometheus"})
+    except Exception:
+        pass
+
+    return jsonify({
+        "pods": [{
+            "pod_name": os.environ.get("POD_NAME", socket.gethostname()),
+            "cpu":      psutil.cpu_percent(interval=0.1),
+            "source":   "self",
+        }],
+        "count": 1,
+        "source": "self",
+    })
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Blue/Green – proxy calls to the router service
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route("/bluegreen/status")
+def bluegreen_status():
+    import urllib.request as ur
+    try:
+        resp = ur.urlopen("http://router:5001/router/weight", timeout=2)
+        return Response(resp.read(), mimetype="application/json")
+    except Exception:
+        return jsonify({"blue": 100, "green": 0,
+                        "counts": {"blue": 0, "green": 0},
+                        "avg_latency": {"blue": 0, "green": 0},
+                        "error": "Router not reachable"})
+
+
+@app.route("/bluegreen/weight", methods=["POST"])
+def bluegreen_weight():
+    import urllib.request as ur
+    try:
+        body = json.dumps(request.get_json(silent=True) or {}).encode()
+        req  = ur.Request(
+            "http://router:5001/router/weight", data=body,
+            headers={"Content-Type": "application/json"}, method="POST"
+        )
+        resp = ur.urlopen(req, timeout=2)
+        return Response(resp.read(), mimetype="application/json")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 503
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  Alertmanager webhook receiver
 # ══════════════════════════════════════════════════════════════════════════════
 @app.route("/alerts", methods=["POST"])
