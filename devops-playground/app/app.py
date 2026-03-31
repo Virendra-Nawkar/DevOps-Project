@@ -71,6 +71,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/guide")
+def guide():
+    return render_template("guide.html")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  Health & readiness probes  (Kubernetes uses these)
 # ══════════════════════════════════════════════════════════════════════════════

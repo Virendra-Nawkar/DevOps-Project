@@ -1,0 +1,22 @@
+# Service for Kubernetes / K3s demo
+# Uses ClusterIP internally + port-forward for external access
+# OR change to NodePort if you want direct node access
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-playground
+  namespace: devops
+  labels:
+    app: devops-playground
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port:   "5000"
+spec:
+  selector:
+    app: devops-playground
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+    protocol: TCP

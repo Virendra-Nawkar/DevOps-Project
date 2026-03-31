@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>User Guide — DevOps Playground</title>
+<style>
+  :root {
+    --bg:      #0d1117; --surface: #161b22; --border: #30363d;
+    --text:    #e6edf3; --muted:   #8b949e;
+    --green:   #3fb950; --yellow:  #d29922; --red:    #f85149;
+    --blue:    #58a6ff; --purple:  #bc8cff; --teal:   #39d353;
+    --orange:  #ffa657;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; }
+
+  /* ── Layout ── */
+  .page { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  @media(max-width:800px){ .page{ grid-template-columns:1fr; } .sidebar{ display:none; } }
+
+  /* ── Sidebar TOC ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar h3 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .toc-link {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: none;
+    margin-bottom: 2px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .toc-link:hover { background: #21262d; color: var(--text); }
+  .toc-link.active { background: #1f3a5c; color: var(--blue); }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  header h1 { font-size: 1.1rem; font-weight: 700; }
+  .back-btn {
+    margin-left: auto;
+    padding: 6px 14px;
+    background: #1f3a5c;
+    color: var(--blue);
+    border: 1px solid var(--blue);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  .content { padding: 32px 40px; max-width: 900px; }
+  @media(max-width:600px){ .content{ padding: 20px 16px; } }
+
+  /* ── Section cards ── */
+  .section { margin-bottom: 40px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .section-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #1f3a5c;
+    color: var(--blue);
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .section-desc { font-size: 0.87rem; color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
+
+  /* ── Code blocks ── */
+  .code-wrap { position: relative; margin: 10px 0; }
+  .code-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  pre {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 44px 14px 16px;
+    font-size: 0.8rem;
+    overflow-x: auto;
+    line-height: 1.6;
+    color: var(--teal);
+  }
+  pre .c { color: var(--muted); }   /* comment */
+  pre .k { color: var(--blue); }    /* keyword */
+  pre .s { color: var(--orange); }  /* string */
+  .copy-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: #21262d;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--blue); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  /* ── Try it buttons ── */
+  .try-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 8px; }
+  .try-btn {
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s, transform 0.1s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .try-btn:hover   { opacity: 0.85; }
+  .try-btn:active  { transform: scale(0.96); }
+  .btn-get    { background: #1f4d23; color: var(--green); border: 1px solid var(--green); }
+  .btn-post   { background: #1f3a5c; color: var(--blue);  border: 1px solid var(--blue); }
+  .btn-red    { background: #4d1f1f; color: var(--red);   border: 1px solid var(--red); }
+  .btn-yellow { background: #4d3a1f; color: var(--yellow);border: 1px solid var(--yellow); }
+  .btn-purple { background: #3a1f5c; color: var(--purple);border: 1px solid var(--purple); }
+
+  /* ── Response box ── */
+  .resp-box {
+    display: none;
+    margin-top: 10px;
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 0.78rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 220px;
+    overflow-y: auto;
+    line-height: 1.5;
+  }
+  .resp-box.ok  { border-color: var(--green); color: var(--teal); }
+  .resp-box.err { border-color: var(--red);   color: var(--red); }
+  .resp-label   { font-size: 0.68rem; color: var(--muted); margin-top: 6px; }
+
+  /* ── Table ── */
+  .api-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 10px; }
+  .api-table th { background: #21262d; padding: 8px 10px; text-align: left; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .api-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .api-table tr:last-child td { border-bottom: none; }
+  .method-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+  .m-get  { background: #1f4d23; color: var(--green); }
+  .m-post { background: #1f3a5c; color: var(--blue); }
+  .endpoint-path { color: var(--teal); font-family: monospace; }
+
+  /* ── Flow diagram ── */
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 14px 0; }
+  .flow-step {
+    background: #21262d;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    text-align: center;
+  }
+  .flow-arrow { color: var(--muted); margin: 0 6px; font-size: 1rem; }
+
+  /* ── Service URLs ── */
+  .svc-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 10px; }
+  @media(max-width:500px){ .svc-grid{ grid-template-columns:1fr; } }
+  .svc-url-card {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 12px 14px;
+  }
+  .svc-url-card .name { font-size: 0.78rem; font-weight: 700; margin-bottom: 4px; }
+  .svc-url-card a { color: var(--blue); font-size: 0.8rem; font-family: monospace; text-decoration: none; }
+  .svc-url-card a:hover { text-decoration: underline; }
+  .svc-url-card .desc { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+  /* ── Chaos table ── */
+  .chaos-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .chaos-table th { background: #21262d; padding: 8px 10px; text-align: left; color: var(--muted); font-size: 0.72rem; }
+  .chaos-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .chaos-table tr:last-child td { border-bottom: none; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 20px; right: 20px;
+    padding: 10px 18px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 7px; font-size: 0.82rem;
+    opacity: 0; transform: translateY(8px);
+    transition: all 0.3s; z-index: 999; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.ok  { border-color: var(--green); color: var(--green); }
+  #toast.err { border-color: var(--red);   color: var(--red); }
+
+  /* misc */
+  .tag { display:inline-block; padding:2px 8px; border-radius:20px; font-size:0.7rem; font-weight:600; }
+  .tag-get  { background:#1f4d23; color:var(--green); }
+  .tag-post { background:#1f3a5c; color:var(--blue); }
+  hr { border: none; border-top: 1px solid var(--border); margin: 30px 0; }
+  strong { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Sidebar TOC ── -->
+  <nav class="sidebar">
+    <h3>On this page</h3>
+    <a class="toc-link" href="#quickstart">1. Quick Start</a>
+    <a class="toc-link" href="#load">2. Load Generator</a>
+    <a class="toc-link" href="#chaos">3. Chaos Engineering</a>
+    <a class="toc-link" href="#metrics">4. Metrics & Monitoring</a>
+    <a class="toc-link" href="#bluegreen">5. Blue/Green Deploy</a>
+    <a class="toc-link" href="#stream">6. Live Stream</a>
+    <a class="toc-link" href="#apiref">7. Full API Reference</a>
+    <a class="toc-link" href="#k8s">8. Kubernetes Commands</a>
+  </nav>
+
+  <!-- ── Main ── -->
+  <div>
+    <header>
+      <span style="font-size:1.4rem">📖</span>
+      <h1>End-User Guide</h1>
+      <span style="font-size:0.82rem;color:var(--muted);">DevOps Playground</span>
+      <a href="/" class="back-btn">← Dashboard</a>
+    </header>
+
+    <div class="content">
+
+      <p style="font-size:0.9rem;color:var(--muted);margin-bottom:28px;line-height:1.7;">
+        This guide shows you exactly how to use every feature on this website — as an end user.
+        Every section has a <strong style="color:var(--green)">Try it</strong> button that calls the real API live,
+        plus copy-paste <strong style="color:var(--teal)">curl</strong> and
+        <strong style="color:var(--purple)">Python</strong> code you can run from your terminal.
+      </p>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- SECTION 1: QUICK START                                       -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <div class="section" id="quickstart">
+        <div class="section-title"><span class="section-badge">1</span> Quick Start</div>
+        <div class="card">
+          <p class="section-desc">
+            This is a <strong>Kubernetes autoscaling demo app</strong>. It lets you:<br>
+            &bull; Generate CPU load to <strong>trigger pod autoscaling</strong> — watch pods go from 1 → 10<br>
+            &bull; Break things on purpose (<strong>chaos engineering</strong>) to see Kubernetes self-heal<br>
+            &bull; Monitor everything live with <strong>Prometheus, Grafana, and Alertmanager</strong>
+          </p>
+
+          <div class="flow">
+            <div class="flow-step">🖥️ You (browser)</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">Port :80<br>App Dashboard</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">Flask API<br>/info /load /chaos</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">📊 Prometheus<br>Port :82</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">📈 Grafana<br>Port :83</div>
+          </div>
+
+          <p style="font-size:0.82rem;color:var(--muted);margin:14px 0 6px;">First call — get full pod info:</p>
+          <div class="try-row">
+            <button class="try-btn btn-get" onclick="tryIt('GET','/info','resp-info')">▶ Try it: GET /info</button>
+          </div>
+          <div class="resp-box" id="resp-info"></div>
+
+          <div class="code-wrap" style="margin-top:14px;">
+            <div class="code-label">curl</div>
+            <pre id="c-info">curl http://52.173.127.47:80/info</pre>
+            <button class="copy-btn" onclick="copyCode('c-info',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">Python</div>
+            <pre id="p-info"><span class="k">import</span> requests, json
+resp = requests.get(<span class="s">"http://52.173.127.47:80/info"</span>)
+<span class="k">print</span>(json.dumps(resp.json(), indent=2))</pre>
+            <button class="copy-btn" onclick="copyCode('p-info',this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- SECTION 2: LOAD GENERATOR                                    -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <div class="section" id="load">
+        <div class="section-title"><span class="section-badge">2</span> Load Generator — Trigger Autoscaling</div>
+        <div class="card">
+          <p class="section-desc">
+            Start CPU stress workers inside the pod. When CPU crosses <strong>50%</strong>,
+            Kubernetes HPA automatically creates new pods. Stop the load and pods scale back down after ~5 minutes.
+          </p>
+
+          <div class="flow">
+            <div class="flow-step">POST /load/start<br><small>{"workers":4}</small></div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">CPU spikes<br>to 80-100%</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">HPA fires<br>(CPU > 50%)</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step" style="border-color:var(--green);color:var(--green)">1 → 3 → 5<br>pods created</div>
+          </div>
+
+          <div class="try-row">
+            <button class="try-btn btn-post" onclick="tryIt('POST','/load/start','resp-load',{workers:4})">🚀 Try it: Start 4 workers</button>
+            <button class="try-btn btn-red"  onclick="tryIt('POST','/load/stop','resp-load')">🛑 Try it: Stop load</button>
+            <button class="try-btn btn-get"  onclick="tryIt('GET','/load/status','resp-load')">📊 Try it: Check status</button>
+          </div>
+          <div class="resp-box" id="resp-load"></div>
+
+          <div class="code-wrap" style="margin-top:14px;">
+            <div class="code-label">curl — start load</div>
+            <pre id="c-load-start">curl -X POST http://52.173.127.47:80/load/start \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"workers": 4}'</span></pre>
+            <button class="copy-btn" onclick="copyCode('c-load-start',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">curl — stop load</div>
+            <pre id="c-load-stop">curl -X POST http://52.173.127.47:80/load/stop</pre>
+            <button class="copy-btn" onclick="copyCode('c-load-stop',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">Python — full autoscaling trigger</div>
+            <pre id="p-load"><span class="k">import</span> requests, time
+
+BASE = <span class="s">"http://52.173.127.47:80"</span>
+
+<span class="c"># Start load with 4 workers</span>
+r = requests.post(f<span class="s">"{BASE}/load/start"</span>, json={<span class="s">"workers"</span>: 4})
+<span class="k">print</span>(<span class="s">"Load started:"</span>, r.json())
+
+<span class="c"># Watch CPU every 5 seconds</span>
+<span class="k">for</span> _ <span class="k">in</span> range(6):
+    info = requests.get(f<span class="s">"{BASE}/info"</span>).json()
+    <span class="k">print</span>(f<span class="s">"CPU: {info['cpu_percent']}%  Workers: {info['active_load_workers']}"</span>)
+    time.sleep(5)
+
+<span class="c"># Stop load</span>
+requests.post(f<span class="s">"{BASE}/load/stop"</span>)
+<span class="k">print</span>(<span class="s">"Load stopped. Pods will scale down in ~5 min."</span>)</pre>
+            <button class="copy-btn" onclick="copyCode('p-load',this)">Copy</button>
+          </div>
+
+          <p style="font-size:0.78rem;color:var(--muted);margin-top:10px;">
+            Watch scaling in Kubernetes: <code style="color:var(--teal)">kubectl get hpa -n devops -w</code>
+            and <code style="color:var(--teal)">kubectl get pods -n devops -w</code>
+          </p>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- SECTION 3: CHAOS ENGINEERING                                 -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <div class="section" id="chaos">
+        <div class="section-title"><span class="section-badge">3</span> Chaos Engineering</div>
+        <div class="card">
+          <p class="section-desc">
+            Break things on purpose to test how Kubernetes responds.
+            This is how Netflix, Amazon, and Google test their systems are resilient.
+          </p>
+
+          <table class="chaos-table">
+            <thead><tr>
+              <th>Action</th><th>What you send</th><th>What happens</th><th>Kubernetes reaction</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>Kill Liveness</strong></td>
+                <td><code style="color:var(--teal)">POST /chaos/unhealthy</code></td>
+                <td><code>/health</code> returns 500</td>
+                <td style="color:var(--red)">Pod restarted after 3 failures (~30s)</td>
+              </tr>
+              <tr>
+                <td><strong>Restore Health</strong></td>
+                <td><code style="color:var(--teal)">POST /chaos/healthy</code></td>
+                <td><code>/health</code> returns 200</td>
+                <td style="color:var(--green)">Pod stays running normally</td>
+              </tr>
+              <tr>
+                <td><strong>Kill Readiness</strong></td>
+                <td><code style="color:var(--teal)">POST /chaos/not-ready</code></td>
+                <td><code>/ready</code> returns 503</td>
+                <td style="color:var(--yellow)">Pod removed from load balancer, no traffic</td>
+              </tr>
+              <tr>
+                <td><strong>Restore Ready</strong></td>
+                <td><code style="color:var(--teal)">POST /chaos/ready</code></td>
+                <td><code>/ready</code> returns 200</td>
+                <td style="color:var(--green)">Pod added back to load balancer</td>
+              </tr>
+              <tr>
+                <td><strong>Inject Latency</strong></td>
+                <td><code style="color:var(--teal)">POST /chaos/delay</code> <code>{"ms":500}</code></td>
+                <td>Every response delayed 500ms</td>
+                <td style="color:var(--yellow)">SLA breach visible in Grafana</td>
+              </tr>
+              <tr>
+                <td><strong>Trigger Error</strong></td>
+                <td><code style="color:var(--teal)">GET /chaos/error</code></td>
+                <td>Returns HTTP 500</td>
+                <td style="color:var(--red)">Error counter increments, alert may fire</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="try-row" style="margin-top:16px;">
+            <button class="try-btn btn-red"    onclick="tryIt('POST','/chaos/unhealthy','resp-chaos')">❌ Kill Liveness</button>
+            <button class="try-btn btn-get"    onclick="tryIt('POST','/chaos/healthy','resp-chaos')" style="background:#1f4d23;color:var(--green);border:1px solid var(--green)">✅ Restore Health</button>
+            <button class="try-btn btn-yellow" onclick="tryIt('POST','/chaos/not-ready','resp-chaos')">⚠️ Kill Readiness</button>
+            <button class="try-btn btn-get"    onclick="tryIt('POST','/chaos/ready','resp-chaos')" style="background:#1f4d23;color:var(--green);border:1px solid var(--green)">✅ Restore Ready</button>
+            <button class="try-btn btn-red"    onclick="tryIt('GET','/chaos/error','resp-chaos')">💣 Trigger Error</button>
+            <button class="try-btn btn-yellow" onclick="tryIt('POST','/chaos/delay','resp-chaos',{ms:500})">🐢 Add 500ms Delay</button>
+            <button class="try-btn btn-post"   onclick="tryIt('POST','/chaos/delay','resp-chaos',{ms:0})">⚡ Remove Delay</button>
+          </div>
+          <div class="resp-box" id="resp-chaos"></div>
+
+          <div class="code-wrap" style="margin-top:16px;">
+            <div class="code-label">curl — all chaos commands</div>
+            <pre id="c-chaos"><span class="c"># Break liveness probe (pod will restart in ~30s)</span>
+curl -X POST http://52.173.127.47:80/chaos/unhealthy
+
+<span class="c"># Restore liveness</span>
+curl -X POST http://52.173.127.47:80/chaos/healthy
+
+<span class="c"># Remove pod from load balancer</span>
+curl -X POST http://52.173.127.47:80/chaos/not-ready
+
+<span class="c"># Add it back</span>
+curl -X POST http://52.173.127.47:80/chaos/ready
+
+<span class="c"># Inject 500ms latency</span>
+curl -X POST http://52.173.127.47:80/chaos/delay \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"ms": 500}'</span>
+
+<span class="c"># Remove latency</span>
+curl -X POST http://52.173.127.47:80/chaos/delay \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"ms": 0}'</span>
+
+<span class="c"># Trigger a 500 error</span>
+curl http://52.173.127.47:80/chaos/error</pre>
+            <button class="copy-btn" onclick="copyCode('c-chaos',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">Python — chaos test sequence</div>
+            <pre id="p-chaos"><span class="k">import</span> requests, time
+
+BASE = <span class="s">"http://52.173.127.47:80"</span>
+
+<span class="c"># Test 1: break and auto-restore liveness</span>
+requests.post(f<span class="s">"{BASE}/chaos/unhealthy"</span>)
+<span class="k">print</span>(<span class="s">"Liveness broken — Kubernetes will restart pod in ~30s"</span>)
+time.sleep(35)
+requests.post(f<span class="s">"{BASE}/chaos/healthy"</span>)
+<span class="k">print</span>(<span class="s">"Liveness restored"</span>)
+
+<span class="c"># Test 2: latency injection</span>
+requests.post(f<span class="s">"{BASE}/chaos/delay"</span>, json={<span class="s">"ms"</span>: 500})
+<span class="k">print</span>(<span class="s">"Added 500ms delay"</span>)
+time.sleep(10)
+requests.post(f<span class="s">"{BASE}/chaos/delay"</span>, json={<span class="s">"ms"</span>: 0})
+<span class="k">print</span>(<span class="s">"Delay removed"</span>)</pre>
+            <button class="copy-btn" onclick="copyCode('p-chaos',this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- SECTION 4: METRICS & MONITORING                              -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <div class="section" id="metrics">
+        <div class="section-title"><span class="section-badge">4</span> Metrics & Monitoring</div>
+        <div class="card">
+          <p class="section-desc">
+            The app exposes metrics in <strong>Prometheus format</strong> at <code>/metrics</code>.
+            Prometheus scrapes this every 15 seconds. Grafana reads from Prometheus to draw charts.
+          </p>
+
+          <div class="try-row">
+            <button class="try-btn btn-get" onclick="tryIt('GET','/metrics','resp-metrics')">▶ Try it: GET /metrics</button>
+            <button class="try-btn btn-get" onclick="tryIt('GET','/services/health','resp-metrics')">🟢 Try it: Service Health</button>
+          </div>
+          <div class="resp-box" id="resp-metrics"></div>
+
+          <div class="code-wrap" style="margin-top:14px;">
+            <div class="code-label">curl — get raw Prometheus metrics</div>
+            <pre id="c-metrics">curl http://52.173.127.47:80/metrics</pre>
+            <button class="copy-btn" onclick="copyCode('c-metrics',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">curl — check all service health</div>
+            <pre id="c-health">curl http://52.173.127.47:80/services/health | python3 -m json.tool</pre>
+            <button class="copy-btn" onclick="copyCode('c-health',this)">Copy</button>
+          </div>
+
+          <p style="font-size:0.82rem;font-weight:600;margin:16px 0 8px;">Monitoring services:</p>
+          <div class="svc-grid">
+            <div class="svc-url-card">
+              <div class="name">📊 Prometheus</div>
+              <a href="http://52.173.127.47:82" target="_blank">http://52.173.127.47:82</a>
+              <div class="desc">Query metrics, check alert rules</div>
+            </div>
+            <div class="svc-url-card">
+              <div class="name">📈 Grafana</div>
+              <a href="http://52.173.127.47:83" target="_blank">http://52.173.127.47:83</a>
+              <div class="desc">Dashboards + logs — admin / devops123</div>
+            </div>
+            <div class="svc-url-card">
+              <div class="name">🚨 Alertmanager</div>
+              <a href="http://52.173.127.47:84" target="_blank">http://52.173.127.47:84</a>
+              <div class="desc">See fired alerts, silences</div>
+            </div>
+            <div class="svc-url-card">
+              <div class="name">🔀 Router (Blue/Green)</div>
+              <a href="http://52.173.127.47:85" target="_blank">http://52.173.127.47:85</a>
+              <div class="desc">Access app through traffic router</div>
+            </div>
+          </div>
+
+          <div class="code-wrap" style="margin-top:16px;">
+            <div class="code-label">Python — read specific metric values</div>
+            <pre id="p-metrics"><span class="k">import</span> requests
+
+info = requests.get(<span class="s">"http://52.173.127.47:80/info"</span>).json()
+
+<span class="k">print</span>(f<span class="s">"Pod name   : {info['pod_name']}"</span>)
+<span class="k">print</span>(f<span class="s">"CPU usage  : {info['cpu_percent']}%"</span>)
+<span class="k">print</span>(f<span class="s">"Memory     : {info['memory_used_mb']} MB / {info['memory_total_mb']} MB"</span>)
+<span class="k">print</span>(f<span class="s">"Requests   : {info['request_count']}"</span>)
+<span class="k">print</span>(f<span class="s">"Errors     : {info['error_count']}"</span>)
+<span class="k">print</span>(f<span class="s">"Uptime     : {info['uptime_seconds']}s"</span>)</pre>
+            <button class="copy-btn" onclick="copyCode('p-metrics',this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- SECTION 5: BLUE/GREEN DEPLOYMENT                            -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <div class="section" id="bluegreen">
+        <div class="section-title"><span class="section-badge">5</span> Blue / Green Deployment</div>
+        <div class="card">
+          <p class="section-desc">
+            There are two versions of the app running simultaneously.
+            A <strong>router on port :85</strong> splits traffic between them.
+            Drag the slider on the dashboard — or use the API — to shift 0%→100% of traffic to either version.
+            This is how companies do <strong>zero-downtime deployments</strong>.
+          </p>
+
+          <div class="flow">
+            <div class="flow-step">User request<br>→ :85</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step">Router checks<br>blue_weight %</div>
+            <span class="flow-arrow">→</span>
+            <div class="flow-step" style="border-color:var(--blue);color:var(--blue)">🔵 Blue<br>v1.0.0</div>
+            <span class="flow-arrow" style="color:var(--muted)">or</span>
+            <div class="flow-step" style="border-color:var(--green);color:var(--green)">🟢 Green<br>v2.0.0</div>
+          </div>
+
+          <div class="try-row" style="margin-top:14px;">
+            <button class="try-btn btn-get"  onclick="tryIt('GET','/bluegreen/status','resp-bg')">▶ Try it: Get split</button>
+            <button class="try-btn btn-post" onclick="setBGWeight(100)">🔵 All Blue (100%)</button>
+            <button class="try-btn btn-yellow" onclick="setBGWeight(50)">50 / 50 Split</button>
+            <button class="try-btn btn-get"  onclick="setBGWeight(0)" style="background:#1f4d23;color:var(--green);border:1px solid var(--green)">🟢 All Green (100%)</button>
+          </div>
+          <div class="resp-box" id="resp-bg"></div>
+
+          <div class="code-wrap" style="margin-top:14px;">
+            <div class="code-label">curl — check current traffic split</div>
+            <pre id="c-bg-get">curl http://52.173.127.47:85/router/weight</pre>
+            <button class="copy-btn" onclick="copyCode('c-bg-get',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">curl — shift traffic</div>
+            <pre id="c-bg-set"><span class="c"># Send 50% to blue, 50% to green</span>
+curl -X POST http://52.173.127.47:85/router/weight \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"blue": 50, "message": "Canary: 50/50 split"}'</span>
+
+<span class="c"># All traffic to green (new version)</span>
+curl -X POST http://52.173.127.47:85/router/weight \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"blue": 0, "message": "Full cutover to green v2"}'</span>
+
+<span class="c"># Rollback to blue</span>
+curl -X POST http://52.173.127.47:85/router/weight \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"blue": 100, "message": "Rollback to blue v1"}'</span></pre>
+            <button class="copy-btn" onclick="copyCode('c-bg-set',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">Python — automated canary rollout</div>
+            <pre id="p-bg"><span class="k">import</span> requests, time
+
+ROUTER = <span class="s">"http://52.173.127.47:85"</span>
+
+steps = [
+    (90, <span class="s">"Canary: 10% to green"</span>),
+    (70, <span class="s">"Canary: 30% to green"</span>),
+    (50, <span class="s">"Canary: 50/50 split"</span>),
+    (20, <span class="s">"Canary: 80% to green"</span>),
+    (0,  <span class="s">"Full cutover to green v2"</span>),
+]
+
+<span class="k">for</span> blue_pct, msg <span class="k">in</span> steps:
+    r = requests.post(f<span class="s">"{ROUTER}/router/weight"</span>,
+                      json={<span class="s">"blue"</span>: blue_pct, <span class="s">"message"</span>: msg})
+    <span class="k">print</span>(f<span class="s">"✓ {msg}"</span>, r.json())
+    time.sleep(30)  <span class="c"># wait and observe error rate before next step</span>
+
+<span class="k">print</span>(<span class="s">"Deployment complete — 100% traffic on green v2"</span>)</pre>
+            <button class="copy-btn" onclick="copyCode('p-bg',this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- SECTION 6: LIVE STREAM                                       -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <div class="section" id="stream">
+        <div class="section-title"><span class="section-badge">6</span> Live Metrics Stream (SSE)</div>
+        <div class="card">
+          <p class="section-desc">
+            <code>/stream</code> uses <strong>Server-Sent Events</strong> — the server pushes a JSON update to you every 2 seconds
+            without you having to poll. The dashboard uses this to update CPU/memory charts in real time.
+            You can consume it from curl or Python too.
+          </p>
+
+          <div class="code-wrap">
+            <div class="code-label">curl — watch live stream in terminal (Ctrl+C to stop)</div>
+            <pre id="c-stream">curl -N http://52.173.127.47:80/stream
+
+<span class="c"># Output (every 2 seconds):
+# data: {"cpu": 12.3, "memory": 45.1, "requests": 84, "workers": 0, ...}
+# data: {"cpu": 14.7, "memory": 45.2, "requests": 85, "workers": 0, ...}</span></pre>
+            <button class="copy-btn" onclick="copyCode('c-stream',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">Python — consume SSE stream</div>
+            <pre id="p-stream"><span class="k">import</span> requests, json
+
+url = <span class="s">"http://52.173.127.47:80/stream"</span>
+resp = requests.get(url, stream=<span class="k">True</span>)
+
+<span class="k">print</span>(<span class="s">"Listening to live stream... (Ctrl+C to stop)"</span>)
+<span class="k">for</span> line <span class="k">in</span> resp.iter_lines():
+    <span class="k">if</span> line <span class="k">and</span> line.startswith(<span class="s">b"data:"</span>):
+        data = json.loads(line[5:])
+        <span class="k">print</span>(
+            f<span class="s">"CPU:{data['cpu']:5.1f}%  "</span>
+            f<span class="s">"MEM:{data['memory']:5.1f}%  "</span>
+            f<span class="s">"REQ:{data['requests']:6d}  "</span>
+            f<span class="s">"WORKERS:{data['workers']}"</span>
+        )</pre>
+            <button class="copy-btn" onclick="copyCode('p-stream',this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- SECTION 7: FULL API REFERENCE                                -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <div class="section" id="apiref">
+        <div class="section-title"><span class="section-badge">7</span> Full API Reference</div>
+        <div class="card">
+          <table class="api-table">
+            <thead><tr>
+              <th>Method</th><th>Endpoint</th><th>Body</th><th>What it does</th>
+            </tr></thead>
+            <tbody>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/</td><td>—</td><td>Main dashboard UI</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/guide</td><td>—</td><td>This page</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/info</td><td>—</td><td>Full pod info (name, IP, CPU, memory, requests)</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/health</td><td>—</td><td>Liveness probe — 200 healthy / 500 unhealthy</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/ready</td><td>—</td><td>Readiness probe — 200 ready / 503 not ready</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/metrics</td><td>—</td><td>Prometheus metrics text format</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/stream</td><td>—</td><td>SSE stream, JSON every 2 seconds</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/services/health</td><td>—</td><td>Health of all 7 stack services</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/pods</td><td>—</td><td>Pod list from Prometheus</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/load/status</td><td>—</td><td>Active workers + CPU percent</td></tr>
+              <tr><td><span class="method-badge m-post">POST</span></td><td class="endpoint-path">/load/start</td><td><code>{"workers":4}</code></td><td>Start CPU stress workers (1-8)</td></tr>
+              <tr><td><span class="method-badge m-post">POST</span></td><td class="endpoint-path">/load/stop</td><td>—</td><td>Stop all workers</td></tr>
+              <tr><td><span class="method-badge m-post">POST</span></td><td class="endpoint-path">/chaos/unhealthy</td><td>—</td><td>Break liveness probe</td></tr>
+              <tr><td><span class="method-badge m-post">POST</span></td><td class="endpoint-path">/chaos/healthy</td><td>—</td><td>Restore liveness probe</td></tr>
+              <tr><td><span class="method-badge m-post">POST</span></td><td class="endpoint-path">/chaos/not-ready</td><td>—</td><td>Break readiness probe</td></tr>
+              <tr><td><span class="method-badge m-post">POST</span></td><td class="endpoint-path">/chaos/ready</td><td>—</td><td>Restore readiness probe</td></tr>
+              <tr><td><span class="method-badge m-post">POST</span></td><td class="endpoint-path">/chaos/delay</td><td><code>{"ms":500}</code></td><td>Inject artificial latency (0 to remove)</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/chaos/error</td><td>—</td><td>Return HTTP 500</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/bluegreen/status</td><td>—</td><td>Current traffic split + counts</td></tr>
+              <tr><td><span class="method-badge m-post">POST</span></td><td class="endpoint-path">/bluegreen/weight</td><td><code>{"blue":50}</code></td><td>Set traffic % to blue (0-100)</td></tr>
+              <tr><td><span class="method-badge m-get">GET</span></td><td class="endpoint-path">/alerts/list</td><td>—</td><td>Active Alertmanager alerts</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <!-- SECTION 8: KUBERNETES COMMANDS                               -->
+      <!-- ════════════════════════════════════════════════════════════ -->
+      <div class="section" id="k8s">
+        <div class="section-title"><span class="section-badge">8</span> Kubernetes Commands (for operators)</div>
+        <div class="card">
+          <p class="section-desc">
+            These commands work on the VM when K3s is running.
+            Run them in a separate terminal while you trigger load from the browser.
+          </p>
+
+          <div class="code-wrap">
+            <div class="code-label">Watch pods scale in real time</div>
+            <pre id="c-k8s-pods">kubectl get pods -n devops -w</pre>
+            <button class="copy-btn" onclick="copyCode('c-k8s-pods',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">Watch HPA (autoscaler) decisions</div>
+            <pre id="c-k8s-hpa">kubectl get hpa devops-playground -n devops -w</pre>
+            <button class="copy-btn" onclick="copyCode('c-k8s-hpa',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">See CPU + memory per pod</div>
+            <pre id="c-k8s-top">kubectl top pods -n devops</pre>
+            <button class="copy-btn" onclick="copyCode('c-k8s-top',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">See scaling events</div>
+            <pre id="c-k8s-events">kubectl get events -n devops --sort-by='.lastTimestamp' | grep -i scal</pre>
+            <button class="copy-btn" onclick="copyCode('c-k8s-events',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">Stream logs from all pods</div>
+            <pre id="c-k8s-logs">kubectl logs -l app=devops-playground -n devops -f</pre>
+            <button class="copy-btn" onclick="copyCode('c-k8s-logs',this)">Copy</button>
+          </div>
+
+          <div class="code-wrap">
+            <div class="code-label">All useful commands at once</div>
+            <pre id="c-k8s-all"><span class="c"># Scale manually (bypasses HPA)</span>
+kubectl scale deployment devops-playground --replicas=5 -n devops
+
+<span class="c"># Get shell inside a running pod</span>
+kubectl exec -it -n devops \
+  $(kubectl get pod -n devops -l app=devops-playground -o name | head -1) -- bash
+
+<span class="c"># Rolling update to new image</span>
+kubectl set image deployment/devops-playground \
+  app=devops-playground:latest -n devops
+
+<span class="c"># Rollback</span>
+kubectl rollout undo deployment/devops-playground -n devops
+
+<span class="c"># Delete a pod (K8s recreates it immediately)</span>
+kubectl delete pod -n devops \
+  $(kubectl get pod -n devops -o name | head -1)</pre>
+            <button class="copy-btn" onclick="copyCode('c-k8s-all',this)">Copy</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /page -->
+
+<div id="toast"></div>
+
+<script>
+// ── Try it ────────────────────────────────────────────────────────────────────
+async function tryIt(method, path, respId, body) {
+  const box = document.getElementById(respId);
+  box.style.display = 'block';
+  box.className = 'resp-box';
+  box.textContent = 'Calling ' + method + ' ' + path + ' …';
+
+  try {
+    const opts = { method };
+    if (body) {
+      opts.headers = { 'Content-Type': 'application/json' };
+      opts.body = JSON.stringify(body);
+    }
+    const r = await fetch(path, opts);
+    const ct = r.headers.get('content-type') || '';
+    let text;
+    if (ct.includes('json')) {
+      text = JSON.stringify(await r.json(), null, 2);
+    } else {
+      text = await r.text();
+    }
+    box.className = 'resp-box ' + (r.ok ? 'ok' : 'err');
+    box.textContent = `HTTP ${r.status}\n\n${text}`;
+  } catch (e) {
+    box.className = 'resp-box err';
+    box.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ── Blue/Green weight ─────────────────────────────────────────────────────────
+async function setBGWeight(blue) {
+  const msgs = { 100: 'All to Blue v1', 50: 'Canary 50/50', 0: 'All to Green v2' };
+  await tryIt('POST', '/bluegreen/weight', 'resp-bg', {
+    blue,
+    message: msgs[blue] || `Blue ${blue}%`
+  });
+}
+
+// ── Copy code ─────────────────────────────────────────────────────────────────
+function copyCode(id, btn) {
+  const el = document.getElementById(id);
+  const text = el.innerText || el.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ── Sidebar active TOC ────────────────────────────────────────────────────────
+const sections = document.querySelectorAll('.section');
+const tocLinks  = document.querySelectorAll('.toc-link');
+const observer  = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      tocLinks.forEach(l => l.classList.remove('active'));
+      const link = document.querySelector(`.toc-link[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
