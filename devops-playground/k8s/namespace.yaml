@@ -1,7 +1,18 @@
+# ── App namespace ──────────────────────────────────────────────────────────────
 apiVersion: v1
 kind: Namespace
 metadata:
   name: devops
   labels:
     name: devops
-    purpose: devops-playground
+    purpose: app
+
+---
+# ── Monitoring namespace ───────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    name: monitoring
+    purpose: observability

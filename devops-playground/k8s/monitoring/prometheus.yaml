@@ -1,0 +1,179 @@
+# =============================================================================
+# Prometheus  –  metrics collection + alerting
+# Namespace: monitoring
+# Access:  kubectl port-forward svc/prometheus 82:9090 -n monitoring
+# =============================================================================
+
+# ── ConfigMap (prometheus.yml + alert-rules.yml) ───────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval:     15s
+      evaluation_interval: 15s
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets: [alertmanager:9093]
+
+    rule_files:
+      - /etc/prometheus/alert-rules.yml
+
+    scrape_configs:
+      - job_name: devops-playground
+        static_configs:
+          - targets: ['devops-playground.devops.svc.cluster.local:80']
+        metrics_path: /metrics
+
+      - job_name: prometheus
+        static_configs:
+          - targets: ['localhost:9090']
+
+  alert-rules.yml: |
+    groups:
+      - name: devops-playground-alerts
+        interval: 15s
+        rules:
+          - alert: AppDown
+            expr: up{job="devops-playground"} == 0
+            for: 30s
+            labels:
+              severity: critical
+            annotations:
+              summary: "Application is DOWN"
+              description: "devops-playground has been unreachable for 30s."
+
+          - alert: HighCPUWarning
+            expr: app_cpu_usage_percent > 60
+            for: 30s
+            labels:
+              severity: warning
+            annotations:
+              summary: "High CPU on {{ $labels.pod }}"
+              description: "CPU is {{ $value | printf \"%.1f\" }}% (threshold 60%)"
+
+          - alert: HighCPUCritical
+            expr: app_cpu_usage_percent > 85
+            for: 30s
+            labels:
+              severity: critical
+            annotations:
+              summary: "CRITICAL CPU on {{ $labels.pod }}"
+              description: "CPU is {{ $value | printf \"%.1f\" }}% (threshold 85%)"
+
+          - alert: ErrorRateSpike
+            expr: increase(app_errors_total[5m]) > 5
+            for: 1m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Error rate spike on {{ $labels.pod }}"
+
+          - alert: LoadWorkersActive
+            expr: app_load_workers > 0
+            for: 2m
+            labels:
+              severity: info
+            annotations:
+              summary: "Load workers running on {{ $labels.pod }}"
+
+---
+# ── PersistentVolumeClaim ──────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: monitoring
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+# ── Deployment ─────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 65534
+        runAsNonRoot: true
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.51.0
+        args:
+          - --config.file=/etc/prometheus/prometheus.yml
+          - --storage.tsdb.path=/prometheus
+          - --web.enable-lifecycle
+          - --storage.tsdb.retention.time=7d
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        - name: data
+          mountPath: /prometheus
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: 9090
+          initialDelaySeconds: 30
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: 9090
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+      - name: data
+        persistentVolumeClaim:
+          claimName: prometheus-pvc
+
+---
+# ── Service ────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitoring
+  labels:
+    app: prometheus
+spec:
+  selector:
+    app: prometheus
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 9090
+    targetPort: 9090
