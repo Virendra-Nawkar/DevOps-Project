@@ -2,14 +2,24 @@ global:
   scrape_interval:     15s
   evaluation_interval: 15s
 
+# ── Alertmanager connection ───────────────────────────────────────────────────
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# ── Alert rule files ──────────────────────────────────────────────────────────
+rule_files:
+  - /etc/prometheus/alert-rules.yml
+
+# ── Scrape targets ────────────────────────────────────────────────────────────
 scrape_configs:
-  # Scrape the DevOps Playground app
-  - job_name: 'devops-playground'
+  - job_name: devops-playground
     static_configs:
       - targets: ['app:5000']
     metrics_path: /metrics
 
-  # Scrape Prometheus itself
-  - job_name: 'prometheus'
+  - job_name: prometheus
     static_configs:
       - targets: ['localhost:9090']

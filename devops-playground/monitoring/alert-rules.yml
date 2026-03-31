@@ -1,0 +1,63 @@
+groups:
+  - name: devops-playground-alerts
+    interval: 15s
+    rules:
+
+      # ── App Down ────────────────────────────────────────────────────────────
+      - alert: AppDown
+        expr: up{job="devops-playground"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Application is DOWN"
+          description: "devops-playground has been unreachable for 30s. Check the container."
+
+      # ── High CPU ────────────────────────────────────────────────────────────
+      - alert: HighCPUWarning
+        expr: app_cpu_usage_percent > 60
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.pod }}"
+          description: "CPU is {{ $value | printf \"%.1f\" }}% (threshold 60%) for 30s. Load workers may be running."
+
+      - alert: HighCPUCritical
+        expr: app_cpu_usage_percent > 85
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRITICAL CPU usage on {{ $labels.pod }}"
+          description: "CPU is {{ $value | printf \"%.1f\" }}% (threshold 85%) for 30s. HPA should be scaling up."
+
+      # ── High Memory ─────────────────────────────────────────────────────────
+      - alert: HighMemoryWarning
+        expr: app_memory_usage_bytes / 1024 / 1024 > 200
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory on {{ $labels.pod }}"
+          description: "Memory usage is {{ $value | printf \"%.0f\" }}MB (threshold 200MB)."
+
+      # ── Error Rate ──────────────────────────────────────────────────────────
+      - alert: ErrorRateSpike
+        expr: increase(app_errors_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Error rate spike on {{ $labels.pod }}"
+          description: "More than 5 errors in the last 5 minutes. Check chaos settings."
+
+      # ── Load Workers Active ─────────────────────────────────────────────────
+      - alert: LoadWorkersActive
+        expr: app_load_workers > 0
+        for: 2m
+        labels:
+          severity: info
+        annotations:
+          summary: "CPU load workers running on {{ $labels.pod }}"
+          description: "{{ $value }} load worker(s) have been running for 2+ minutes. HPA should trigger soon."

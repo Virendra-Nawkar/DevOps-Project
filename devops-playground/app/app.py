@@ -29,6 +29,7 @@ _health_ok      = True           # toggle via /chaos/unhealthy
 _ready_ok       = True           # toggle via /chaos/not-ready
 _simulate_delay = 0              # artificial latency (ms)
 counter_lock    = threading.Lock()
+active_alerts   = []             # populated by Alertmanager webhook
 
 
 # ── Helper ─────────────────────────────────────────────────────────────────────
@@ -278,6 +279,33 @@ def stream():
         mimetype="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Alertmanager webhook receiver
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route("/alerts", methods=["POST"])
+def receive_alerts():
+    global active_alerts
+    data = request.get_json(silent=True) or {}
+    alerts = data.get("alerts", [])
+    active_alerts = [
+        {
+            "name":       a.get("labels", {}).get("alertname", "Unknown"),
+            "severity":   a.get("labels", {}).get("severity", "info"),
+            "status":     a.get("status", "firing"),
+            "summary":    a.get("annotations", {}).get("summary", ""),
+            "starts_at":  a.get("startsAt", ""),
+        }
+        for a in alerts
+    ]
+    logger.info("Alertmanager webhook: %d alert(s) received", len(alerts))
+    return jsonify({"status": "ok", "received": len(alerts)})
+
+
+@app.route("/alerts/list")
+def list_alerts():
+    return jsonify(active_alerts)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

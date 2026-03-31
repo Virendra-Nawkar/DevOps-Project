@@ -1,0 +1,42 @@
+global:
+  resolve_timeout: 5m
+
+# ── Routing tree ──────────────────────────────────────────────────────────────
+route:
+  group_by: ['alertname', 'severity']
+  group_wait:      10s    # wait 10s before sending first alert (group more together)
+  group_interval:  30s    # wait 30s before sending new alerts for same group
+  repeat_interval: 5m     # resend if still firing after 5 min
+  receiver: app-webhook   # default receiver
+
+  routes:
+    # Critical alerts go to webhook immediately
+    - match:
+        severity: critical
+      receiver: app-webhook
+      group_wait: 5s
+
+    # Info alerts go to webhook but less urgently
+    - match:
+        severity: info
+      receiver: app-webhook
+      repeat_interval: 30m
+
+# ── Receivers ─────────────────────────────────────────────────────────────────
+receivers:
+  # Sends alerts to the Flask app – shows live in dashboard
+  - name: app-webhook
+    webhook_configs:
+      - url: 'http://app:5000/alerts'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+
+# ── Inhibition rules ──────────────────────────────────────────────────────────
+# Suppress warning alerts when a critical alert is already firing
+inhibit_rules:
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal: ['alertname']
