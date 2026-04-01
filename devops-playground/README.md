@@ -141,11 +141,154 @@ devops-playground/
 
 ---
 
+## Install Everything From Scratch (Fresh Ubuntu/Debian VM)
+
+Run these once on your VM before doing anything else.
+
+### 1. System packages
+
+```bash
+sudo apt update && sudo apt upgrade -y
+
+sudo apt install -y \
+  git \
+  curl \
+  wget \
+  ca-certificates \
+  gnupg \
+  lsb-release \
+  apt-transport-https \
+  software-properties-common \
+  net-tools \
+  htop \
+  unzip
+```
+
+### 2. Docker
+
+```bash
+# Add Docker's official GPG key and repo
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine + Compose plugin
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Allow running Docker without sudo
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Verify
+docker --version
+docker compose version
+```
+
+### 3. kubectl
+
+```bash
+# Add Kubernetes apt repo
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key \
+  | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] \
+  https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /" \
+  | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt update
+sudo apt install -y kubectl
+
+# Verify
+kubectl version --client
+```
+
+### 4. Python 3.11 (for running the app directly without Docker)
+
+```bash
+sudo apt install -y python3.11 python3.11-venv python3-pip
+
+# Verify
+python3 --version
+pip3 --version
+```
+
+### 5. Open Firewall Ports (Azure / AWS / GCP security group)
+
+On Azure Portal: go to your VM → **Networking** → **Add inbound port rule** for each port:
+
+| Port | Protocol | Purpose |
+|------|----------|---------|
+| 80 | TCP | Main app dashboard |
+| 81 | TCP | Nginx load balancer |
+| 82 | TCP | Prometheus |
+| 83 | TCP | Grafana |
+| 84 | TCP | Alertmanager |
+| 85 | TCP | Blue/Green router |
+
+Or via Azure CLI:
+```bash
+for port in 80 81 82 83 84 85; do
+  az network nsg rule create \
+    --resource-group YOUR_RESOURCE_GROUP \
+    --nsg-name YOUR_NSG_NAME \
+    --name "Allow-$port" \
+    --protocol Tcp \
+    --direction Inbound \
+    --priority $((1000 + port)) \
+    --destination-port-range $port \
+    --access Allow
+done
+```
+
+---
+
+## Run Locally (No Docker, Pure Python)
+
+If you just want to run the Flask app on your machine without Docker:
+
+```bash
+# 1. Clone the repo
+git clone https://github.com/YOUR_USERNAME/devops-playground.git
+cd devops-playground
+
+# 2. Create and activate a virtual environment
+python3 -m venv venv
+source venv/bin/activate          # Linux / macOS
+# venv\Scripts\activate           # Windows
+
+# 3. Install dependencies
+pip install -r app/requirements.txt
+
+# 4. Set environment variables (optional — defaults work fine)
+export FLASK_ENV=development
+export APP_VERSION=1.0.0
+
+# 5. Run the app
+python app/app.py
+
+# App is now running at http://localhost:80
+# (or http://127.0.0.1:80 — same thing)
+```
+
+> **Note:** Running locally without Docker means only the Flask app runs.
+> Prometheus, Grafana, Loki, and Nginx are Docker-only services.
+> For the full monitoring stack, use Docker Compose.
+
+---
+
 ## Option A — Docker Compose (Quick Start, ~5 min)
 
 ### Prerequisites
 
-- Linux VM or local machine with Docker installed
+- Linux VM or local machine with Docker installed (see install steps above)
 - Ports 80–85 open in your firewall / security group
 
 ### Steps
