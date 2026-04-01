@@ -14,8 +14,8 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-BLUE_URL  = os.environ.get("BLUE_URL",  "http://app-blue:5000")
-GREEN_URL = os.environ.get("GREEN_URL", "http://app-green:5000")
+BLUE_URL  = os.environ.get("BLUE_URL",  "http://app-blue:80")
+GREEN_URL = os.environ.get("GREEN_URL", "http://app-green:80")
 
 # State
 blue_weight  = 100   # % of traffic going to blue (0 = all green, 100 = all blue)
@@ -136,4 +136,4 @@ def proxy(path):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, threaded=True)
+    app.run(host="0.0.0.0", port=85, threaded=True)

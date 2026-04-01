@@ -425,7 +425,7 @@ kubectl port-forward svc/devops-playground 80:80   -n devops      --address 0.0.
 kubectl port-forward svc/prometheus        82:9090  -n monitoring  --address 0.0.0.0 &
 kubectl port-forward svc/grafana           83:3000  -n monitoring  --address 0.0.0.0 &
 kubectl port-forward svc/alertmanager      84:9093  -n monitoring  --address 0.0.0.0 &
-kubectl port-forward svc/router            85:5001  -n devops      --address 0.0.0.0 &
+kubectl port-forward svc/router            85:85    -n devops      --address 0.0.0.0 &
 ```
 
 ---

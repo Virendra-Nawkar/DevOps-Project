@@ -293,13 +293,13 @@ def stream():
 def services_health():
     import urllib.request as ur
     services = [
-        {"name": "App (self)",   "url": "http://localhost:5000/health",    "icon": "⚙️"},
+        {"name": "App (self)",   "url": "http://localhost:80/health",      "icon": "⚙️"},
         {"name": "Nginx LB",     "url": "http://nginx:80",                 "icon": "🔀"},
         {"name": "Prometheus",   "url": "http://prometheus:9090/-/healthy","icon": "📊"},
         {"name": "Grafana",      "url": "http://grafana:3000/api/health",  "icon": "📈"},
         {"name": "Alertmanager", "url": "http://alertmanager:9093/-/healthy","icon":"🚨"},
         {"name": "Loki",         "url": "http://loki:3100/ready",          "icon": "📋"},
-        {"name": "Router",       "url": "http://router:5001/router/health","icon": "🔵"},
+        {"name": "Router",       "url": "http://router:85/router/health",  "icon": "🔵"},
     ]
     results = []
     for svc in services:
@@ -355,7 +355,7 @@ def pods():
 def bluegreen_status():
     import urllib.request as ur
     try:
-        resp = ur.urlopen("http://router:5001/router/weight", timeout=2)
+        resp = ur.urlopen("http://router:85/router/weight", timeout=2)
         return Response(resp.read(), mimetype="application/json")
     except Exception:
         return jsonify({"blue": 100, "green": 0,
@@ -370,7 +370,7 @@ def bluegreen_weight():
     try:
         body = json.dumps(request.get_json(silent=True) or {}).encode()
         req  = ur.Request(
-            "http://router:5001/router/weight", data=body,
+            "http://router:85/router/weight", data=body,
             headers={"Content-Type": "application/json"}, method="POST"
         )
         resp = ur.urlopen(req, timeout=2)
@@ -408,4 +408,4 @@ def list_alerts():
 
 # ══════════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False, threaded=True)
+    app.run(host="0.0.0.0", port=80, debug=False, threaded=True)

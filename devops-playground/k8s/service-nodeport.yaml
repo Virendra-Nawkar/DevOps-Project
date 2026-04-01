@@ -10,7 +10,7 @@ metadata:
     app: devops-playground
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port:   "5000"
+    prometheus.io/port:   "80"
 spec:
   selector:
     app: devops-playground
@@ -18,5 +18,5 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 5000
+    targetPort: 80
     protocol: TCP

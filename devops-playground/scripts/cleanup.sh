@@ -11,7 +11,7 @@ REMOVE_NS=${1:-""}
 echo "🧹  Cleaning up devops-playground..."
 
 # Stop any load first
-APP_URL=${APP_URL:-"http://localhost:5000"}
+APP_URL=${APP_URL:-"http://localhost:80"}
 echo "🛑  Stopping load workers (if any)..."
 curl -s -X POST "${APP_URL}/load/stop" &>/dev/null || true
 

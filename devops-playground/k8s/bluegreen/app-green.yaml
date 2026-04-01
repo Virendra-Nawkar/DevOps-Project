@@ -38,7 +38,7 @@ spec:
         image: devops-playground:latest
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 5000
+        - containerPort: 80
         env:
         - name: POD_NAME
           valueFrom:
@@ -70,14 +70,14 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 5000
+            port: 80
           initialDelaySeconds: 15
           periodSeconds: 10
           failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /ready
-            port: 5000
+            port: 80
           initialDelaySeconds: 10
           periodSeconds: 5
 
@@ -96,5 +96,5 @@ spec:
   type: ClusterIP
   ports:
   - name: http
-    port: 5000
-    targetPort: 5000
+    port: 80
+    targetPort: 80

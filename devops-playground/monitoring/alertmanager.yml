@@ -27,7 +27,7 @@ receivers:
   # Sends alerts to the Flask app – shows live in dashboard
   - name: app-webhook
     webhook_configs:
-      - url: 'http://app:5000/alerts'
+      - url: 'http://app:80/alerts'
         send_resolved: true
         http_config:
           follow_redirects: true

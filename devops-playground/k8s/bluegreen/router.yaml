@@ -1,7 +1,7 @@
 # =============================================================================
 # Blue/Green Router  –  traffic splitter between blue and green
 # Namespace: devops
-# Access:  kubectl port-forward svc/router 85:5001 -n devops
+# Access:  kubectl port-forward svc/router 85:85 -n devops
 # =============================================================================
 
 apiVersion: apps/v1
@@ -29,12 +29,12 @@ spec:
         image: devops-router:latest
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 5001
+        - containerPort: 85
         env:
         - name: BLUE_URL
-          value: "http://app-blue.devops.svc.cluster.local:5000"
+          value: "http://app-blue.devops.svc.cluster.local:80"
         - name: GREEN_URL
-          value: "http://app-green.devops.svc.cluster.local:5000"
+          value: "http://app-green.devops.svc.cluster.local:80"
         resources:
           requests:
             cpu: "50m"
@@ -45,13 +45,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /router/health
-            port: 5001
+            port: 85
           initialDelaySeconds: 10
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /router/health
-            port: 5001
+            port: 85
           initialDelaySeconds: 5
           periodSeconds: 5
 
@@ -69,5 +69,5 @@ spec:
   type: ClusterIP
   ports:
   - name: http
-    port: 5001
-    targetPort: 5001
+    port: 85
+    targetPort: 85

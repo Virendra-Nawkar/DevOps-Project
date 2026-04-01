@@ -9,12 +9,12 @@
 #   ./scripts/load-test.sh <APP_URL> [duration_seconds] [concurrency]
 #
 # Examples:
-#   ./scripts/load-test.sh http://localhost:5000
+#   ./scripts/load-test.sh http://localhost:80
 #   ./scripts/load-test.sh http://devops-playground.local 120 50
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-APP_URL=${1:-"http://localhost:5000"}
+APP_URL=${1:-"http://localhost:80"}
 DURATION=${2:-60}
 CONCURRENCY=${3:-20}
 

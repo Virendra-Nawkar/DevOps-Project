@@ -9,10 +9,10 @@ RUN pip install --no-cache-dir -r router_requirements.txt
 
 COPY app/router.py .
 
-ENV BLUE_URL=http://app-blue:5000
-ENV GREEN_URL=http://app-green:5000
+ENV BLUE_URL=http://app-blue:80
+ENV GREEN_URL=http://app-green:80
 
-EXPOSE 5001
+EXPOSE 85
 
 USER router
 

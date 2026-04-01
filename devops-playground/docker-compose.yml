@@ -35,7 +35,7 @@ services:
     image: devops-playground:latest
     container_name: devops-playground-app
     ports:
-      - "80:5000"
+      - "80:80"
     environment:
       POD_NAME:    "${HOSTNAME:-devops-pod-local}"
       NAMESPACE:   "local"
@@ -46,14 +46,14 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c",
-             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+             "import urllib.request; urllib.request.urlopen('http://localhost:80/health')"]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 10s
     labels:
       - "prometheus.scrape=true"
-      - "prometheus.port=5000"
+      - "prometheus.port=80"
       - "prometheus.path=/metrics"
 
   # ── Nginx Load Balancer ───────────────────────────────────────────────────
@@ -129,7 +129,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c",
-             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+             "import urllib.request; urllib.request.urlopen('http://localhost:80/health')"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -154,7 +154,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c",
-             "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+             "import urllib.request; urllib.request.urlopen('http://localhost:80/health')"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -167,10 +167,10 @@ services:
       dockerfile: Dockerfile.router
     container_name: devops-router
     ports:
-      - "85:5001"
+      - "85:85"
     environment:
-      BLUE_URL:  http://app-blue:5000
-      GREEN_URL: http://app-green:5000
+      BLUE_URL:  http://app-blue:80
+      GREEN_URL: http://app-green:80
     depends_on:
       - app-blue
       - app-green

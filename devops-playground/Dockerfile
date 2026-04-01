@@ -50,17 +50,17 @@ ENV GUNICORN_WORKERS=2
 ENV GUNICORN_THREADS=4
 
 # Non-privileged port
-EXPOSE 5000
+EXPOSE 80
 
 USER appuser
 
 # Health-check so Docker (and docker-compose) can see pod health too
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:80/health')"
 
 # Gunicorn serves the Flask app
 CMD ["gunicorn", \
-     "--bind", "0.0.0.0:5000", \
+     "--bind", "0.0.0.0:80", \
      "--workers", "2", \
      "--threads", "4", \
      "--timeout", "120", \

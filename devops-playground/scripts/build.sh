@@ -34,4 +34,4 @@ fi
 
 echo ""
 echo "✅  Build complete. Run locally with:"
-echo "    docker run -p 5000:5000 ${IMAGE}:${VERSION}"
+echo "    docker run -p 80:80 ${IMAGE}:${VERSION}"

@@ -172,7 +172,7 @@ info "Forwarding port 84  → Alertmanager"
 kubectl port-forward svc/alertmanager       84:9093 -n monitoring --address 0.0.0.0 &>/tmp/pf-alert.log &
 
 info "Forwarding port 85  → Router (blue/green)"
-kubectl port-forward svc/router             85:5001 -n devops     --address 0.0.0.0 &>/tmp/pf-router.log &
+kubectl port-forward svc/router             85:85   -n devops     --address 0.0.0.0 &>/tmp/pf-router.log &
 
 sleep 3
 
